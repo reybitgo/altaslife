@@ -19,10 +19,11 @@ class User
 
         try {
             $paymentMethod = $data['reg_payment_method'] ?? 'code';
+            $isStandard    = ($paymentMethod === 'standard');
             $entryFee      = 0.00;
 
             // ── E-Wallet payment: debit payer, credit admin ──
-            if ($paymentMethod === 'ewallet') {
+            if ($paymentMethod === 'ewallet' && !$isStandard) {
                 $package = Package::find((int)$data['package_id']);
                 if (!$package) {
                     throw new RuntimeException('Invalid package selected.');
@@ -73,7 +74,11 @@ class User
 
             // Insert the new member
             $hash = password_hash($data['password'], PASSWORD_BCRYPT, ['cost' => 12]);
-            $status = !empty($data['pending']) ? 'pending' : ($data['status'] ?? 'active');
+            if ($isStandard) {
+                $status = 'active';
+            } else {
+                $status = !empty($data['pending']) ? 'pending' : ($data['status'] ?? 'active');
+            }
             $pdo->prepare("
                 INSERT INTO users
                   (username, password_hash, package_id, reg_code_id,
@@ -83,10 +88,10 @@ class User
             ")->execute([
                 $data['username'],
                 $hash,
-                (!empty($data['package_id']) ? $data['package_id'] : null),
-                $data['reg_code_id'] ?? null,
+                $isStandard ? null : (!empty($data['package_id']) ? $data['package_id'] : null),
+                $isStandard ? null : ($data['reg_code_id'] ?? null),
                 $paymentMethod,
-                $data['reg_paid_by'] ?? null,
+                $isStandard ? null : ($data['reg_paid_by'] ?? null),
                 $data['sponsor_id'],
                 $data['binary_parent_id'],
                 $data['binary_position'],
@@ -331,8 +336,31 @@ class User
         $st->execute([$userId]);
         $row = $st->fetch();
         if (!$row) return false;
+        if ($row['reg_payment_method'] === 'standard') {
+            return true;
+        }
         return $row['reg_payment_method'] !== 'pending'
             && !($row['reg_payment_method'] === 'code' && $row['code_type'] === 'cd');
+    }
+
+    public static function isStandard(int $userId): bool
+    {
+        $st = db()->prepare("SELECT reg_payment_method FROM users WHERE id = ?");
+        $st->execute([$userId]);
+        $m = $st->fetchColumn();
+        return $m === 'standard';
+    }
+
+    public static function accountLabel(int $userId): string
+    {
+        if (self::isStandard($userId)) {
+            return 'Standard';
+        }
+        $u = self::find($userId);
+        if ($u && $u['package_name']) {
+            return $u['package_name'];
+        }
+        return 'Member';
     }
 
     // ── Package Upgrade ──────────────────────────────────────────────────────

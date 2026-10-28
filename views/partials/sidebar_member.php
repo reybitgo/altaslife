@@ -28,9 +28,9 @@ $nav[] = ['page' => 'genealogy&view=referral', 'icon' => '👥', 'label' => 'Ref
 $nav[] = 'SEPARATOR:Account';
 
 // Staff accounts (admin/superadmin) are not themselves members — no upgrades.
-// Members only see the button when a plan-compatible higher-tier package exists.
+// Standard accounts cannot be upgraded. Members only see the button when a plan-compatible higher-tier package exists.
 $canUpgrade = false;
-if (!Auth::isAdmin()) {
+if (!Auth::isAdmin() && ($user['reg_payment_method'] ?? '') !== 'standard') {
   $curPkgId = (int)($user['package_id'] ?? 0);
   $curFee   = 0.0;
   $curPkg   = $curPkgId ? Package::find($curPkgId) : null;
@@ -137,7 +137,7 @@ function renderSidebarNav($nav, $cp, $user, $view, $initial, $name)
       </div>
       <div class="user-info">
         <div class="user-name"><?= e($name) ?></div>
-        <div class="user-role"><?= e($user['package_name'] ?? 'Member') ?></div>
+        <div class="user-role"><?= e(($user['reg_payment_method'] ?? '') === 'standard' ? 'Standard' : ($user['package_name'] ?? 'Member')) ?></div>
       </div>
     </div>
   </div>

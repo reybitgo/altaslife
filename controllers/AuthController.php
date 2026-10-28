@@ -149,6 +149,14 @@ class AuthController
         $degradedReferral = $refIntent && !$freeEnabled;
         $packages        = Package::all(true); // active packages only
 
+        // When there is nothing to pick, the "Select Package" step is dead
+        // weight: disabling packages forces free registration on and leaves
+        // every package inactive, so registration is free/pending by default.
+        // The $freeEnabled guard keeps the code-only path intact if free is
+        // ever off while no package is active.
+        $packagesDisabled = setting('packages_disabled', '0') === '1';
+        $skipSelectStep   = $freeEnabled && ($packagesDisabled || empty($packages));
+
         // Can the logged-in user afford e-wallet registration?
         $canUseEwallet = false;
         if (Auth::check() && !empty($packages)) {
@@ -254,6 +262,19 @@ class AuthController
         $isReferralMode = isset($_POST['referral_mode']) && $_POST['referral_mode'] === '1';
 
         $paymentMethod = $_POST['payment_method'] ?? 'code';
+
+        // Packages disabled → there is no live package to pay against, so a
+        // stale page or forged POST must not charge a wallet or burn a code.
+        // Every registration becomes Standard (active, no package).
+        $packagesAll = Package::all(true);
+        $packagesDisabledSetting = setting('packages_disabled', '0') === '1';
+        $skipSelectStepCoerce = $packagesDisabledSetting || empty($packagesAll);
+        if ($skipSelectStepCoerce) {
+            $paymentMethod = 'standard';
+            $_POST['payment_method'] = 'standard';
+        } else if (setting('packages_disabled', '0') === '1') {
+            $paymentMethod = 'free';
+        }
         $code          = strtoupper(trim($_POST['reg_code']         ?? ''));
         $packageId     = (int)($_POST['package_id']                ?? 0);
         $username      = strtolower(trim($_POST['username']         ?? ''));
@@ -278,7 +299,7 @@ class AuthController
         // Silently blocks any free/pending attempt when disabled (UI never
         // exposes it in that state, but forged POSTs must not create pending
         // accounts).
-        if ($isReferralMode && setting('free_registration_enabled', '1') !== '1') {
+        if ($isReferralMode && setting('free_registration_enabled', '1') !== '1' && $paymentMethod !== 'standard') {
             redirect('/?page=register');
         }
 
@@ -287,7 +308,7 @@ class AuthController
         // ── Payment-specific validation ──
         $regCodeId = null;
         $regPaidBy = null;
-        if (!$isReferralMode) {
+        if ($paymentMethod !== 'standard' && !$isReferralMode) {
             if ($paymentMethod === 'code') {
                 if (empty($code)) {
                     flash('error', 'Registration code is required.');
@@ -429,31 +450,40 @@ class AuthController
 
         // ── Register ──
         try {
+            if ($paymentMethod === 'standard') {
+                $isReferralMode = true;
+            }
             $newId = User::register([
                 'username'           => $username,
                 'password'           => $password,
-                'package_id'         => $isReferralMode ? 0 : $packageId,
-                'reg_code_id'        => $regCodeId,
-                'reg_payment_method' => $isReferralMode ? 'pending' : $paymentMethod,
-                'reg_paid_by'        => $regPaidBy,
+                'package_id'         => ($isReferralMode || $paymentMethod === 'standard') ? 0 : $packageId,
+                'reg_code_id'        => ($paymentMethod === 'standard') ? null : $regCodeId,
+                'reg_payment_method' => ($paymentMethod === 'standard') ? 'standard' : ($isReferralMode ? 'pending' : $paymentMethod),
+                'reg_paid_by'        => ($paymentMethod === 'standard') ? null : $regPaidBy,
                 'paid_by_username'   => $wasLoggedIn ? (Auth::actingUser()['username'] ?? '') : '',
                 'sponsor_id'         => (int)$sponsor['id'],
-                'binary_parent_id'   => $upline ? (int)$upline['id'] : null,
-                'binary_position'    => $upline ? $position : null,
-                'pending'            => $isReferralMode,
+                'binary_parent_id'   => ($paymentMethod === 'standard' && !$isReferralMode && $wasLoggedIn && ($registrarHasBinary ?? false)) ? ($upline ? (int)$upline['id'] : null) : ($upline ? (int)$upline['id'] : null),
+                'binary_position'    => ($paymentMethod === 'standard' && !$isReferralMode && $wasLoggedIn && ($registrarHasBinary ?? false)) ? ($upline ? $position : null) : ($upline ? $position : null),
+                'pending'            => ($paymentMethod === 'standard') ? false : $isReferralMode,
             ]);
 
             if ($wasLoggedIn) {
                 // Logged-in user registering someone else — restore their session
                 $_SESSION['user_id']   = $prevUserId;
                 $_SESSION['user_role'] = $prevUserRole;
-                flash('success', "Account @{$username} registered successfully." . ($isReferralMode ? ' Awaiting activation.' : ''));
+                if ($paymentMethod === 'standard') {
+                    flash('success', "Account @{$username} registered successfully as Standard.");
+                } else {
+                    flash('success', "Account @{$username} registered successfully." . ($isReferralMode ? ' Awaiting activation.' : ''));
+                }
                 redirect(in_array($prevUserRole, ['admin', 'superadmin'], true) ? '/?page=admin_users' : '/?page=dashboard');
             } else {
                 // Guest registering themselves — log them in as the new user
                 $newUser = User::find($newId);
                 Auth::login($newUser);
-                if ($isReferralMode) {
+                if ($paymentMethod === 'standard') {
+                    flash('success', 'Welcome! Your Standard account has been created.');
+                } elseif ($isReferralMode) {
                     flash('success', 'Welcome! Your account is pending activation. Activate now to unlock earning features.');
                 } else {
                     flash('success', 'Welcome! Your account has been created successfully.');

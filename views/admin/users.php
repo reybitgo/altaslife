@@ -83,7 +83,7 @@
                   <td class="td-muted" style="font-size:.7rem;"><?= ($result['page'] - 1) * $result['per_page'] + $i + 1 ?></td>
                   <td><a href="<?= APP_URL ?>/?page=admin_user_view&id=<?= $m['id'] ?>" class="fw-bold text-decoration-none">@<?= e($m['username']) ?></a></td>
                   <td style="font-size:.825rem;"><?= e($m['full_name'] ?? '—') ?></td>
-                  <td><span class="badge bg-primary-subtle text-primary"><?= e($m['package_name'] ?? '—') ?></span></td>
+                  <td><span class="badge bg-primary-subtle text-primary"><?= e(($m['reg_payment_method'] ?? '') === 'standard' ? 'Standard' : ($m['package_name'] ?? '—')) ?></span></td>
                   <td class="td-green font-mono fw-bold"><?= fmt_money($m['ewallet_balance']) ?></td>
                   <td class="td-muted font-mono"><?= fmt_money((float)($m['pairs_volume_paid'] ?? 0)) ?></td>
                   <td class="td-muted" style="font-size:.75rem;"><?= fmt_date($m['joined_at']) ?></td>

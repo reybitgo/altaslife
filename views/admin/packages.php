@@ -41,12 +41,17 @@
     </style>
 
     <!-- Header -->
+    <?php $packagesDisabled = (defined('DB_NAME') ? false : false); ?>
+    <?php $packagesDisabled = function_exists('setting') ? setting('packages_disabled', '0') === '1' : false; ?>
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
       <div>
         <h4 class="mb-0">Packages</h4>
         <p class="text-muted mb-0" style="font-size:.8rem;">Manage entry plans, bonuses, capping, DFI & commission toggles</p>
+        <?php if ($packagesDisabled): ?>
+          <div class="text-danger" style="font-size:.75rem;">Packages are disabled. All packages are inactive and adding new packages is disabled.</div>
+        <?php endif; ?>
       </div>
-      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#packageModal" onclick="resetPackageForm()">
+      <button type="button" class="btn btn-primary" data-bs-toggle="<?= $packagesDisabled ? '' : 'modal' ?>" data-bs-target="<?= $packagesDisabled ? '' : '#packageModal' ?>" onclick="<?= $packagesDisabled ? 'return false;' : 'resetPackageForm()' ?>" <?= $packagesDisabled ? 'disabled' : '' ?>>
         + New Package
       </button>
     </div>
@@ -130,6 +135,7 @@
                 $lifetimeCap = (float)$pkg['entry_fee'] * (float)$pkg['lifetime_cap_multiplier'];
                 $hasDfi = (float)$pkg['daily_fixed_income'] > 0;
                 $dfiOn = $hasDfi && (int)$pkg['dfi_enabled'] === 1;
+                $pkgStatus = ($packagesDisabled) ? 'inactive' : $pkg['status'];
               ?>
                 <tr>
                   <td style="padding-left:1.25rem;">
@@ -159,13 +165,13 @@
                   </td>
                   <td class="text-center">
                     <div style="display:flex;gap:5px;flex-wrap:nowrap;justify-content:center;">
-                      <span class="badge toggle-badge <?= (int)$pkg['pairing_enabled'] === 1 ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary toggle-off' ?>" title="Binary Network: <?= (int)$pkg['pairing_enabled'] === 1 ? 'ON' : 'OFF' ?>">🌳</span>
-                      <span class="badge toggle-badge <?= (int)$pkg['indirect_referral_enabled'] === 1 ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary toggle-off' ?>" title="Indirect Referral: <?= (int)$pkg['indirect_referral_enabled'] === 1 ? 'ON' : 'OFF' ?>">🔗</span>
-                      <span class="badge toggle-badge <?= $dfiOn ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary toggle-off' ?>" title="Daily Fixed Income: <?= $dfiOn ? 'ON' : 'OFF' ?>">📅</span>
+                      <span class="badge toggle-badge <?= (int)$pkg['pairing_enabled'] === 1 && !$packagesDisabled ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary toggle-off' ?>" title="Binary Network: <?= ((int)$pkg['pairing_enabled'] === 1 && !$packagesDisabled) ? 'ON' : 'OFF' ?>">🌳</span>
+                      <span class="badge toggle-badge <?= (int)$pkg['indirect_referral_enabled'] === 1 && !$packagesDisabled ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary toggle-off' ?>" title="Indirect Referral: <?= ((int)$pkg['indirect_referral_enabled'] === 1 && !$packagesDisabled) ? 'ON' : 'OFF' ?>">🔗</span>
+                      <span class="badge toggle-badge <?= $dfiOn && !$packagesDisabled ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary toggle-off' ?>" title="Daily Fixed Income: <?= ($dfiOn && !$packagesDisabled) ? 'ON' : 'OFF' ?>">📅</span>
                     </div>
                   </td>
                   <td class="text-center">
-                    <?php if ($pkg['status'] === 'active'): ?>
+                    <?php if ($pkgStatus === 'active'): ?>
                       <span class="badge bg-success-subtle text-success" style="font-size:.72rem;">● Active</span>
                     <?php else: ?>
                       <span class="badge bg-secondary-subtle text-secondary" style="font-size:.72rem;">○ Inactive</span>
@@ -173,7 +179,11 @@
                   </td>
                   <td class="text-end" style="padding-right:1.25rem;">
                     <a href="<?= APP_URL ?>/?page=admin_packages&view=<?= (int)$pkg['id'] ?>" class="btn btn-sm btn-outline-secondary">View</a>
-                    <a href="<?= APP_URL ?>/?page=admin_packages&edit=<?= (int)$pkg['id'] ?>" class="btn btn-sm btn-outline-primary">Edit</a>
+                    <?php if ($packagesDisabled): ?>
+                      <button class="btn btn-sm btn-outline-primary" disabled>Edit</button>
+                    <?php else: ?>
+                      <a href="<?= APP_URL ?>/?page=admin_packages&edit=<?= (int)$pkg['id'] ?>" class="btn btn-sm btn-outline-primary">Edit</a>
+                    <?php endif; ?>
                   </td>
                 </tr>
               <?php endforeach; ?>

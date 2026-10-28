@@ -77,7 +77,7 @@ CREATE TABLE users (
   role              ENUM('member','admin','superadmin') NOT NULL DEFAULT 'member',
   package_id        INT UNSIGNED NULL,
   reg_code_id           INT UNSIGNED NULL,
-  reg_payment_method    ENUM('code','ewallet','pending') NOT NULL DEFAULT 'code',
+  reg_payment_method    ENUM('code','ewallet','pending','standard') NOT NULL DEFAULT 'code',
   reg_paid_by           INT UNSIGNED NULL,
 
   -- Binary tree placement

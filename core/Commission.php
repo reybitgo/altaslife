@@ -79,6 +79,19 @@ class Commission
             // v2: Skip capped/perminact members entirely — no pairing bonuses for them.
             //     Their leg volume still accumulates while capped (parity with counts);
             //     earnings resume on reactivation.
+            $curPm = $pdo->query("SELECT reg_payment_method FROM users WHERE id = {$cur}")->fetchColumn();
+            if ($curPm === 'standard') {
+                // Move to parent but do NOT process pairs for this Standard ancestor
+                $upRow = $pdo->prepare(
+                    'SELECT binary_parent_id, binary_position FROM users WHERE id = ?'
+                );
+                $upRow->execute([$cur]);
+                $up = $upRow->fetch();
+                $side = $up['binary_position'] ?? null;
+                $cur  = isset($up['binary_parent_id']) ? (int)$up['binary_parent_id'] : null;
+                if (!$cur) break;
+                continue;
+            }
             if (!CapEngine::isActiveForPairs($cur)) {
                 // Move to parent but do NOT process pairs for this capped ancestor
                 $upRow = $pdo->prepare(
@@ -179,8 +192,19 @@ class Commission
         int $newUserId,
         int $packageId
     ): void {
+        $pdo = db();
+        // Standard accounts earn nothing
+        $sponsorPm = $pdo->query("SELECT reg_payment_method FROM users WHERE id = {$sponsorId}")->fetchColumn();
+        if ($sponsorPm === 'standard') {
+            return;
+        }
+        $newPm = $pdo->query("SELECT reg_payment_method FROM users WHERE id = {$newUserId}")->fetchColumn();
+        if ($newPm === 'standard') {
+            return;
+        }
+
         // Skip if sponsor is not active (e.g., pending activation)
-        $sponsorStatus = db()->query("SELECT status FROM users WHERE id = {$sponsorId}")->fetchColumn();
+        $sponsorStatus = $pdo->query("SELECT status FROM users WHERE id = {$sponsorId}")->fetchColumn();
         if ($sponsorStatus !== 'active') {
             return;
         }
@@ -277,6 +301,11 @@ class Commission
         int $newUserId,
         int $packageId
     ): void {
+        $pdo = db();
+        $newPm = $pdo->query("SELECT reg_payment_method FROM users WHERE id = {$newUserId}")->fetchColumn();
+        if ($newPm === 'standard') {
+            return;
+        }
         if (!Package::hasIndirectReferral($packageId)) {
             return;
         }
@@ -300,6 +329,24 @@ class Commission
         $visited = [$directSponsorId => true];
 
         for ($lvl = 1; $lvl <= 10; $lvl++) {
+            // Standard accounts earn nothing
+            $uplinePm = $pdo->query("SELECT reg_payment_method FROM users WHERE id = {$cur}")->fetchColumn();
+            if ($uplinePm === 'standard') {
+                // Move up but do NOT pay this level
+                $row = $pdo->prepare('SELECT sponsor_id FROM users WHERE id = ?');
+                $row->execute([$cur]);
+                $upRow = $row->fetch();
+                if (!$upRow || empty($upRow['sponsor_id'])) {
+                    break;
+                }
+                $next = (int)$upRow['sponsor_id'];
+                if (isset($visited[$next])) {
+                    break;
+                }
+                $visited[$next] = true;
+                $cur = $next;
+                continue;
+            }
 
             // Skip if this upline is not active
             $uplineStatus = $pdo->query("SELECT status FROM users WHERE id = {$cur}")->fetchColumn();

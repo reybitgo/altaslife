@@ -28,6 +28,16 @@ class CapEngine
     {
         $status = self::getCapStatus($userId);
 
+        // Standard accounts have no capping applied and earn nothing
+        $pm = db()->query("SELECT reg_payment_method FROM users WHERE id = {$userId}")->fetchColumn();
+        if ($pm === 'standard') {
+            return [
+                'allowed' => 0.00,
+                'blocked' => $amount,
+                'status'  => 'standard',
+            ];
+        }
+
         // Deactivated users earn nothing
         $userStatus = db()->query("SELECT status FROM users WHERE id = {$userId}")->fetchColumn();
         if ($userStatus === 'deactivated') {
@@ -88,6 +98,10 @@ class CapEngine
     public static function recordEarning(int $userId, float $amount, string $type): void
     {
         if ($amount <= 0) return;
+        $pm = db()->query("SELECT reg_payment_method FROM users WHERE id = {$userId}")->fetchColumn();
+        if ($pm === 'standard') {
+            return;
+        }
 
         $pdo = db();
 

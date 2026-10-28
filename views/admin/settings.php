@@ -141,14 +141,30 @@
                                     </span>
                                 </div>
                             </div>
+                            <div class="mb-3 mt-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="packages_disabled" id="packagesDisabled" value="1" <?= setting('packages_disabled', '0') === '1' ? 'checked' : '' ?>>
+                                    <label class="form-check-label fw-semibold" for="packagesDisabled">📦 Disable Packages</label>
+                                </div>
+                                <div class="form-text">When enabled, all packages become inactive, adding new packages is disabled, and free registration is forced on.</div>
+                            </div>
+
                             <div class="mb-0 mt-3">
                                 <label class="form-label">🆓 Free Registration</label>
-                                <select name="free_registration_enabled" class="form-select">
-                                    <option value="1" <?= setting('free_registration_enabled', '1') === '1' ? 'selected' : '' ?>>🟢 On — Anyone can start free (pending) registration</option>
-                                    <option value="0" <?= setting('free_registration_enabled', '1') !== '1' ? 'selected' : '' ?>>🔴 Off — Free registration disabled; codes/e-wallet only</option>
+                                <?php $packagesDisabled = setting('packages_disabled', '0') === '1'; ?>
+                                <select name="free_registration_enabled" id="freeRegistrationSelect" class="form-select" <?= $packagesDisabled ? 'disabled' : '' ?>>
+                                    <option value="1" <?= ($packagesDisabled || setting('free_registration_enabled', '1') === '1') ? 'selected' : '' ?>>🟢 On — Anyone can start free (pending) registration</option>
+                                    <option value="0" <?= (!$packagesDisabled && setting('free_registration_enabled', '1') !== '1') ? 'selected' : '' ?>>🔴 Off — Free registration disabled; codes/e-wallet only</option>
                                 </select>
+                                <?php if ($packagesDisabled): ?>
+                                    <input type="hidden" name="free_registration_enabled" value="1">
+                                <?php endif; ?>
                                 <div class="form-text">
-                                    When Off, free/pending signups are blocked. Referral links then require immediate payment via a registration code or e-wallet.
+                                    <?php if ($packagesDisabled): ?>
+                                        Free registration is forced on while packages are disabled.
+                                    <?php else: ?>
+                                        When Off, free/pending signups are blocked. Referral links then require immediate payment via a registration code or e-wallet.
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -581,6 +597,37 @@
                 p.classList.remove('show', 'active');
             });
             pane.classList.add('show', 'active');
+        }
+
+        // Handle packages disabled toggle affecting free registration
+        var packagesDisabledToggle = document.getElementById('packagesDisabled');
+        var freeRegSelect = document.getElementById('freeRegistrationSelect');
+        if (packagesDisabledToggle && freeRegSelect) {
+            function syncFreeRegState() {
+                if (packagesDisabledToggle.checked) {
+                    freeRegSelect.value = '1';
+                    freeRegSelect.disabled = true;
+                    // Add hidden input if not exists
+                    var hidden = document.querySelector('input[type="hidden"][name="free_registration_enabled"]');
+                    if (!hidden) {
+                        hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = 'free_registration_enabled';
+                        hidden.value = '1';
+                        freeRegSelect.parentNode.appendChild(hidden);
+                    } else {
+                        hidden.value = '1';
+                    }
+                } else {
+                    freeRegSelect.disabled = false;
+                    var hidden = document.querySelector('input[type="hidden"][name="free_registration_enabled"]');
+                    if (hidden) {
+                        hidden.remove();
+                    }
+                }
+            }
+            packagesDisabledToggle.addEventListener('change', syncFreeRegState);
+            syncFreeRegState();
         }
 
         // ── Business address: PSGC picker (same psgc.cloud fetch as profile) ──

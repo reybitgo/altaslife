@@ -992,6 +992,13 @@
 </script>
 
 <?php if ($view !== 'referral'): ?>
+  <?php
+  // Packages disabled (or none active) while free registration is on → there is
+  // nothing to select, so the modal opens straight on Account Setup.
+  $packagesDisabled = setting('packages_disabled', '0') === '1';
+  $skipSelectStep   = setting('free_registration_enabled', '1') === '1'
+      && ($packagesDisabled || empty($packages));
+  ?>
   <script>
     let regCodeData = {},
       regSelectedPkg = {},
@@ -1007,6 +1014,7 @@
     const CURRENT_USER = '<?= e($user["username"]) ?>';
     const REGISTRAR_HAS_BINARY = <?= $pairingEnabled ? 'true' : 'false' ?>;
     const RM_FREE_ENABLED = <?= setting('free_registration_enabled', '1') === '1' ? 'true' : 'false' ?>;
+    const RM_SKIP_SELECT_STEP = <?= $skipSelectStep ? 'true' : 'false' ?>;
     let rmBinaryMode = 'manual',
       rmAutoSuggestion = null,
       rmAutoActive = false,
@@ -1071,8 +1079,13 @@
       }
     }
 
+    function rmPaymentMethod() {
+      if (RM_SKIP_SELECT_STEP) return 'free';
+      return document.querySelector('[name="payment_method"]:checked')?.value || 'code';
+    }
+
     function rmCurrentPairing() {
-      const method = document.querySelector('[name="payment_method"]:checked')?.value || 'code';
+      const method = rmPaymentMethod();
       if (method === 'code') return !!(regCodeData && regCodeData.pairing_enabled);
       if (regSelectedPkg.pairing_enabled === true || regSelectedPkg.pairing_enabled === false) return regSelectedPkg.pairing_enabled;
       const single = document.getElementById('rm_packageId');
@@ -1111,7 +1124,7 @@
     function rmApplyBinary() {
       const sec = document.getElementById('rm_binarySection');
       if (!sec) return;
-      const method = document.querySelector('[name="payment_method"]:checked')?.value || 'code';
+      const method = rmPaymentMethod();
       const pairing = rmCurrentPairing();
       const toggle = document.getElementById('rm_hasBinary');
       const modeSec = document.getElementById('rm_binaryModeSection');
@@ -1163,7 +1176,7 @@
       regSelectedPkg = {};
       regUsernameOk = false;
       regSlotData = {};
-      regCurrentStep = 1;
+      regCurrentStep = RM_SKIP_SELECT_STEP ? 2 : 1;
       if (RM_FREE_ENABLED) {
         document.getElementById('rm_referralMode').value = '1';
       } else {
@@ -1212,19 +1225,26 @@
         right: data.right != null
       };
       rmApplyDefaultPosition();
-      regGoStep(1);
+      if (RM_SKIP_SELECT_STEP) {
+        // Packages disabled: Account Setup is the first screen. Surface the
+        // "no payment required now" notice that the Continue handler would
+        // otherwise have shown.
+        document.getElementById('rm_referralAlert').style.display = 'block';
+      }
+      regGoStep(regCurrentStep);
       rmApplyBinary();
       new bootstrap.Modal(modal).show();
     }
 
     function regGoStep(n) {
       regCurrentStep = n;
-      for (let i = 1; i <= 3; i++) {
+      const steps = RM_SKIP_SELECT_STEP ? [2, 3] : [1, 2, 3];
+      steps.forEach(i => {
         const el = document.getElementById('rm_step' + i);
         if (el) el.style.display = i === n ? 'block' : 'none';
         const ind = document.getElementById('rm_ind_' + i);
         if (ind) ind.className = 'reg-step ' + (i < n ? 'done' : i === n ? 'active' : '');
-      }
+      });
     }
 
     function regSetHint(id, msg, ok) {
@@ -1444,7 +1464,7 @@
           alert('Please select a binary position (Left or Right).');
           return;
         }
-        const method = document.querySelector('[name="payment_method"]:checked').value,
+        const method = rmPaymentMethod(),
           isFree = method === 'free';
         document.getElementById('rm_revFreeRow').style.display = isFree ? '' : 'none';
         document.getElementById('rm_revPayRow').style.display = isFree ? 'none' : '';
@@ -1563,16 +1583,18 @@
           <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
         </div>
         <div class="steps-bar" id="rm_stepsBar">
-          <div class="reg-step active" id="rm_ind_1">
-            <div class="step-dot">1</div>
-            <div class="step-text">Select Package</div>
-          </div>
-          <div class="reg-step" id="rm_ind_2">
-            <div class="step-dot">2</div>
+          <?php if (!$skipSelectStep): ?>
+            <div class="reg-step active" id="rm_ind_1">
+              <div class="step-dot">1</div>
+              <div class="step-text">Select Package</div>
+            </div>
+          <?php endif; ?>
+          <div class="reg-step <?= $skipSelectStep ? 'active' : '' ?>" id="rm_ind_2">
+            <div class="step-dot"><?= $skipSelectStep ? '1' : '2' ?></div>
             <div class="step-text">Account Setup</div>
           </div>
           <div class="reg-step" id="rm_ind_3">
-            <div class="step-dot">3</div>
+            <div class="step-dot"><?= $skipSelectStep ? '2' : '3' ?></div>
             <div class="step-text">Confirm</div>
           </div>
         </div>
@@ -1582,10 +1604,10 @@
           <input type="hidden" name="sponsor_username" id="rm_sponsor_username">
           <input type="hidden" name="upline_username" id="rm_upline_username">
           <input type="hidden" name="binary_position" id="rm_binary_position">
-          <input type="hidden" name="referral_mode" id="rm_referralMode" value="">
+          <input type="hidden" name="referral_mode" id="rm_referralMode" value="<?= $skipSelectStep ? '1' : '' ?>">
 
           <!-- STEP 1 -->
-          <div class="auth-body" id="rm_step1">
+          <div class="auth-body" id="rm_step1" <?= $skipSelectStep ? 'style="display:none;"' : '' ?>>
             <p class="text-muted mb-3" style="font-size:.85rem;">Choose payment method and package for the new member.</p>
             <div class="mb-3">
               <label class="form-label">Payment Method <span class="text-danger">*</span></label>
@@ -1687,7 +1709,7 @@
           </div>
 
           <!-- STEP 2 -->
-          <div class="auth-body" id="rm_step2" style="display:none;">
+          <div class="auth-body" id="rm_step2" <?= $skipSelectStep ? '' : 'style="display:none;"' ?>>
             <div id="rm_referralAlert" class="alert alert-info py-2 mb-3" style="font-size:.85rem;display:none;">🔗 No payment is required now — the member can activate their account later with a registration code or e-wallet.</div>
             <div class="mb-3">
               <label class="form-label">Username <span class="text-danger">*</span></label>
@@ -1717,7 +1739,9 @@
               <div class="form-text" id="rm_sponsorHint"></div>
             </div>
             <div class="d-flex gap-2">
-              <button type="button" class="btn btn-outline-secondary" onclick="regGoStep(1)">← Back</button>
+              <?php if (!$skipSelectStep): ?>
+                <button type="button" class="btn btn-outline-secondary" onclick="regGoStep(1)">← Back</button>
+              <?php endif; ?>
               <button type="button" class="btn btn-primary flex-grow-1" id="rm_toStep3Btn">Review →</button>
             </div>
           </div>

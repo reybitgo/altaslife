@@ -146,8 +146,8 @@
   display: flex;
   padding: 1.1rem 2.25rem;
   gap: 0;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  background: #f3f4f6;
+  border-bottom: 1px solid #d1d5db;
 }
 .reg-step {
   flex: 1;
@@ -164,7 +164,7 @@
   left: 50%;
   right: -50%;
   height: 2px;
-  background: #e5e7eb;
+  background: #d1d5db;
   z-index: 0;
 }
 .reg-step:last-child::before {
@@ -174,43 +174,47 @@
   background: var(--auth-800);
 }
 .reg-step.active::before {
-  background: linear-gradient(90deg, var(--auth-800), #e5e7eb);
+  background: linear-gradient(90deg, var(--auth-800), #d1d5db);
 }
 .step-dot {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #e5e7eb;
-  color: #9ca3af;
-  font-size: 0.72rem;
-  font-weight: 700;
+  background: #d1d5db;
+  color: #4b5563;
+  font-size: 0.75rem;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   z-index: 1;
   transition: all 0.2s;
+  border: 2px solid #9ca3af;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 .reg-step.done .step-dot {
-  background: var(--auth-800);
-  color: #fff;
+  background: #d1d5db;
+  color: #6b7280;
+  border-color: #9ca3af;
 }
 .reg-step.active .step-dot {
   background: var(--auth-800);
-  color: #fff;
-  box-shadow: 0 0 0 4px rgba(201, 163, 92, 0.22);
+  color: #4b5563;
+  border-color: var(--auth-800);
+  box-shadow: 0 0 0 4px rgba(201, 163, 92, 0.28);
 }
 .step-text {
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: #9ca3af;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #4b5563;
   white-space: nowrap;
 }
 .reg-step.active .step-text {
   color: var(--auth-800);
 }
 .reg-step.done .step-text {
-  color: #374151;
+  color: #4b5563;
 }
 
 /* Code verified banner */

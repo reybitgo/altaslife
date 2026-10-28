@@ -320,6 +320,12 @@ class AdminController
         Auth::guard('admin');
         csrf_verify();
 
+        if (function_exists('setting') && setting('packages_disabled', '0') === '1') {
+            flash('error', 'Packages are disabled. Adding or modifying packages is not allowed.');
+            redirect('/?page=admin_packages');
+            return;
+        }
+
         $id       = (int)($_POST['package_id'] ?? 0);
         $existing = $id ? Package::find($id) : null;
         $data = [
@@ -539,6 +545,7 @@ class AdminController
                 'maintenance_mode',
                 'seat_limit',
                 'free_registration_enabled',
+                'packages_disabled',
             ],
             'payments' => [
                 'reactivation_ewallet_enabled',
@@ -593,7 +600,7 @@ class AdminController
             redirect('/?page=admin_settings');
         }
 
-        $checkboxKeys = ['gcash_enabled', 'maya_enabled', 'reactivation_ewallet_enabled', 'reactivation_external_enabled', 'shop_enabled'];
+        $checkboxKeys = ['gcash_enabled', 'maya_enabled', 'reactivation_ewallet_enabled', 'reactivation_external_enabled', 'shop_enabled', 'packages_disabled'];
         $hourKeys     = ['shop_payment_deadline_hours', 'shop_correction_window_hours', 'shop_max_proof_attempts', 'shop_report_window_days', 'shop_max_delivery_attempts'];
 
         $pdo = db();
@@ -615,6 +622,25 @@ class AdminController
             } elseif (isset($_POST[$key])) {
                 $st->execute([$key, trim($_POST[$key])]);
             }
+        }
+
+        // Enforce rules when packages are disabled
+        if ($group === 'maint') {
+            $packagesDisabled = isset($_POST['packages_disabled']) && $_POST['packages_disabled'] === '1';
+            if ($packagesDisabled) {
+                // Force free registration on and make it read-only
+                $st2 = $pdo->prepare("INSERT INTO settings (key_name, value) VALUES ('free_registration_enabled', '1') ON DUPLICATE KEY UPDATE value = '1'");
+                $st2->execute();
+                // Make all packages inactive
+                $pdo->exec("UPDATE packages SET status = 'inactive'");
+                setting_forget('free_registration_enabled');
+                setting_forget('packages_disabled');
+            } else {
+                setting_forget('free_registration_enabled');
+                setting_forget('packages_disabled');
+            }
+        } else {
+            setting_forget(null);
         }
 
         flash('success', 'Settings saved.');

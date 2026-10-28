@@ -604,6 +604,10 @@ class MemberController
     {
         Auth::guard('member');
         $user = Auth::user();
+        if (($user['reg_payment_method'] ?? '') === 'standard') {
+            flash('info', 'Standard accounts cannot be activated or upgraded.');
+            redirect('/?page=dashboard');
+        }
 
         if ($user['status'] !== 'pending') {
             flash('info', 'Your account is already active.');
@@ -1171,6 +1175,10 @@ class MemberController
         }
 
         $user = Auth::user();
+        if (($user['reg_payment_method'] ?? '') === 'standard') {
+            flash('error', 'Standard accounts cannot be upgraded.');
+            redirect('/?page=dashboard');
+        }
         $status = (string)($user['status'] ?? '');
         if ($status === 'pending') {
             flash('error', 'Activate your account before upgrading packages.');

@@ -18,6 +18,12 @@ if ($isLoggedIn && !$canUseEwallet && !empty($packages)) {
 $prefillSponsor = $prefillSponsor ?? trim($_GET['sponsor'] ?? '');
 $isReferralMode = ($isReferralMode ?? false);
 $freeEnabled    = setting('free_registration_enabled', '1') === '1';
+// Packages can be disabled (or all inactivated) while free registration is
+// forced on. In that state there is nothing to select — default to free and
+// let the member go straight to account setup.
+$packagesDisabled = $packagesDisabled ?? (setting('packages_disabled', '0') === '1');
+$skipSelectStep   = $skipSelectStep   ?? ($freeEnabled && empty($packages));
+$twoStepFlow      = $isReferralMode || $skipSelectStep;
 $degradedReferral = ($degradedReferral ?? false);
 $prefillUpline   = $prefillUpline   ?? '';
 $prefillPosition = $prefillPosition ?? 'left';
@@ -94,18 +100,18 @@ if (!$isLoggedIn && !$prefillSponsor) {
 
               <!-- Step bar -->
               <div class="steps-bar" id="stepsBar">
-                <?php if (!$isReferralMode): ?>
+                <?php if (!$twoStepFlow): ?>
                   <div class="reg-step active" id="step-ind-1">
                     <div class="step-dot">1</div>
                     <div class="step-text">Select Package</div>
                   </div>
                 <?php endif; ?>
-                <div class="reg-step <?= $isReferralMode ? 'active' : '' ?>" id="step-ind-2">
-                  <div class="step-dot"><?= $isReferralMode ? '1' : '2' ?></div>
+                <div class="reg-step <?= $twoStepFlow ? 'active' : '' ?>" id="step-ind-2">
+                  <div class="step-dot"><?= $twoStepFlow ? '1' : '2' ?></div>
                   <div class="step-text">Account Setup</div>
                 </div>
                 <div class="reg-step" id="step-ind-3">
-                  <div class="step-dot"><?= $isReferralMode ? '2' : '3' ?></div>
+                  <div class="step-dot"><?= $twoStepFlow ? '2' : '3' ?></div>
                   <div class="step-text">Confirm</div>
                 </div>
               </div>
@@ -118,11 +124,11 @@ if (!$isLoggedIn && !$prefillSponsor) {
                   <input type="hidden" name="referral_mode" value="1">
                   <input type="hidden" name="ref_link" value="1">
                 <?php else: ?>
-                  <input type="hidden" name="referral_mode" id="referralMode" value="">
+                  <input type="hidden" name="referral_mode" id="referralMode" value="<?= $skipSelectStep ? '1' : '' ?>">
                 <?php endif; ?>
 
                 <!-- ── STEP 1 ── -->
-                <div class="auth-body" id="step1" <?= $isReferralMode ? 'style="display:none;"' : '' ?>>
+                <div class="auth-body" id="step1" <?= $twoStepFlow ? 'style="display:none;"' : '' ?>>
                   <?php if ($isLoggedIn): ?>
                     <p class="text-muted mb-3" style="font-size:.85rem;">Choose payment method and package for the new member.</p>
 
@@ -264,7 +270,7 @@ if (!$isLoggedIn && !$prefillSponsor) {
                 </div>
 
                 <!-- ── STEP 2 ── -->
-                <div class="auth-body" id="step2" <?= $isReferralMode ? '' : 'style="display:none;"' ?>>
+                <div class="auth-body" id="step2" <?= $twoStepFlow ? '' : 'style="display:none;"' ?>>
                   <div id="referralAlert" class="alert alert-info py-2 mb-3" style="font-size:.85rem;display:none;">
                     🔗 No payment is required now — the member can activate their account later with a registration code or e-wallet.
                   </div>
@@ -277,6 +283,11 @@ if (!$isLoggedIn && !$prefillSponsor) {
                         ℹ️ Your sponsor does not have a binary network, so no binary connection is made at registration. When you activate with a binary package, the system will auto-select the best available position (or you can pick the connection manually).
                       </div>
                     <?php endif; ?>
+                  <?php endif; ?>
+                  <?php if ($skipSelectStep && !$isReferralMode): ?>
+                    <div class="alert alert-info py-2 mb-3" style="font-size:.85rem;">
+                      📦 Packages are currently disabled — new accounts start on the free (pending) plan. You can activate with a package later once packages are available again.
+                    </div>
                   <?php endif; ?>
                   <div class="mb-3">
                     <label class="form-label">Username <span class="text-danger">*</span></label>
@@ -372,7 +383,9 @@ if (!$isLoggedIn && !$prefillSponsor) {
                     </div>
                   </div>
                   <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-secondary" onclick="goStep(1); document.getElementById('referralAlert').style.display='none';">← Back</button>
+                    <?php if (!$twoStepFlow): ?>
+                      <button type="button" class="btn btn-outline-secondary" onclick="goStep(1); document.getElementById('referralAlert').style.display='none';">← Back</button>
+                    <?php endif; ?>
                     <button type="button" class="btn btn-primary flex-grow-1" id="toStep3Btn">Review →</button>
                   </div>
                 </div>
@@ -469,6 +482,7 @@ if (!$isLoggedIn && !$prefillSponsor) {
   const PREFILL_SPONSOR = <?= json_encode($prefillSponsor) ?>;
   const PKG_COUNT = <?= (int)count($packages) ?>;
   const IS_REFERRAL_MODE = <?= $isReferralMode ? 'true' : 'false' ?>;
+  const SKIP_SELECT_STEP = <?= $skipSelectStep ? 'true' : 'false' ?>;
   const FREE_ENABLED = <?= $freeEnabled ? 'true' : 'false' ?>;
   const PREFILL_UPLINE = <?= json_encode($prefillUpline) ?>;
   const PREFILL_POSITION = <?= json_encode($prefillPosition) ?>;
@@ -682,11 +696,18 @@ if (!$isLoggedIn && !$prefillSponsor) {
 
   // ── Payment Method Toggle ─────────────────────────────────────
   function getPaymentMethod() {
+    if (SKIP_SELECT_STEP) return 'free';
     return document.querySelector('[name=payment_method]:checked')?.value || 'code';
   }
 
   function updateStep1State() {
     if (IS_REFERRAL_MODE) return;
+    // No selectable package: everything is free/pending, so only the binary
+    // placement state needs to be derived from the registrar.
+    if (SKIP_SELECT_STEP) {
+      applyBinaryState();
+      return;
+    }
 
     const method = getPaymentMethod();
     const codeSec = document.getElementById('codeSection');
@@ -1122,6 +1143,14 @@ if (!$isLoggedIn && !$prefillSponsor) {
     if (regCode) regCode.required = false;
     const pkgSel = document.getElementById('packageSelect');
     if (pkgSel) pkgSel.required = false;
+  }
+  if (SKIP_SELECT_STEP && !IS_REFERRAL_MODE) {
+    // Packages disabled: Account Setup is the first screen, so validate the
+    // prefilled sponsor up front. No goStep() call — it would wipe the flash.
+    if (PREFILL_SPONSOR) {
+      if (LOCKED_SPONSOR) sponsorOk = true;
+      else checkSponsor(PREFILL_SPONSOR);
+    }
   }
   updateStep1State();
 </script>
