@@ -1848,7 +1848,7 @@ $schemaLogo = $base . '/frontend/og-image.svg';
       .float-card.two {
         animation-delay: -2.3s;
         top: 104px;
-        right: 22px;
+        left: 22px;
       }
 
       .float-card.three {
@@ -3555,7 +3555,7 @@ $schemaLogo = $base . '/frontend/og-image.svg';
 
         .float-card.two {
           top: 96px;
-          right: 13px;
+          left: 13px;
         }
 
         .float-card.three {
@@ -4054,8 +4054,8 @@ $schemaLogo = $base . '/frontend/og-image.svg';
         .float-card.two {
           top: 29%;
           bottom: auto;
-          right: 14px;
-          left: auto;
+          left: 14px;
+          right: auto;
         }
         .float-card.three {
           top: 51%;
