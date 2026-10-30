@@ -1971,6 +1971,12 @@ $schemaLogo = $base . '/frontend/og-image.svg';
         pointer-events: none;
       }
 
+      /* Sunflower petals: static SVG, moved by the petal script at the end of the page */
+      .petals,
+      .petal-flight {
+        pointer-events: none;
+      }
+
       .marquee {
         border-block: 1px solid var(--line);
         background: var(--paper);
@@ -4677,6 +4683,24 @@ $schemaLogo = $base . '/frontend/og-image.svg';
                         stroke-width="6"
                         stroke-linecap="round"
                       />
+                      <!-- Sunflower petals: static shapes, animated by the petal script at the end of the page -->
+                      <g class="petals">
+                        <g class="petal" data-a="3.2" transform="rotate(3.2 300 484)"><path d="M300 475C303.3 473.7 304.6 469.2 304.2 464.4C303.9 460.9 302.3 456.4 300 452.8C297.7 456.4 296.1 460.9 295.8 464.4C295.4 469.2 296.7 473.7 300 475Z" fill="#f4d772" /><path d="M300 472.6V457.2" stroke="#d9a93f" stroke-width=".9" stroke-linecap="round" opacity=".45" /></g>
+                        <g class="petal" data-a="28.91" transform="rotate(28.91 300 484)"><path d="M300 475C303.3 473.7 304.6 469.2 304.2 464.4C303.9 460.9 302.3 456.4 300 452.8C297.7 456.4 296.1 460.9 295.8 464.4C295.4 469.2 296.7 473.7 300 475Z" fill="#e5bb4f" /><path d="M300 472.6V457.2" stroke="#d9a93f" stroke-width=".9" stroke-linecap="round" opacity=".45" /></g>
+                        <g class="petal" data-a="54.63" transform="rotate(54.63 300 484)"><path d="M300 475C303.3 473.7 304.6 469.2 304.2 464.4C303.9 460.9 302.3 456.4 300 452.8C297.7 456.4 296.1 460.9 295.8 464.4C295.4 469.2 296.7 473.7 300 475Z" fill="#f4d772" /><path d="M300 472.6V457.2" stroke="#d9a93f" stroke-width=".9" stroke-linecap="round" opacity=".45" /></g>
+                        <g class="petal" data-a="80.34" transform="rotate(80.34 300 484)"><path d="M300 475C303.3 473.7 304.6 469.2 304.2 464.4C303.9 460.9 302.3 456.4 300 452.8C297.7 456.4 296.1 460.9 295.8 464.4C295.4 469.2 296.7 473.7 300 475Z" fill="#e5bb4f" /><path d="M300 472.6V457.2" stroke="#d9a93f" stroke-width=".9" stroke-linecap="round" opacity=".45" /></g>
+                        <g class="petal" data-a="106.06" transform="rotate(106.06 300 484)"><path d="M300 475C303.3 473.7 304.6 469.2 304.2 464.4C303.9 460.9 302.3 456.4 300 452.8C297.7 456.4 296.1 460.9 295.8 464.4C295.4 469.2 296.7 473.7 300 475Z" fill="#f4d772" /><path d="M300 472.6V457.2" stroke="#d9a93f" stroke-width=".9" stroke-linecap="round" opacity=".45" /></g>
+                        <g class="petal" data-a="131.77" transform="rotate(131.77 300 484)"><path d="M300 475C303.3 473.7 304.6 469.2 304.2 464.4C303.9 460.9 302.3 456.4 300 452.8C297.7 456.4 296.1 460.9 295.8 464.4C295.4 469.2 296.7 473.7 300 475Z" fill="#e5bb4f" /><path d="M300 472.6V457.2" stroke="#d9a93f" stroke-width=".9" stroke-linecap="round" opacity=".45" /></g>
+                        <g class="petal" data-a="157.49" transform="rotate(157.49 300 484)"><path d="M300 475C303.3 473.7 304.6 469.2 304.2 464.4C303.9 460.9 302.3 456.4 300 452.8C297.7 456.4 296.1 460.9 295.8 464.4C295.4 469.2 296.7 473.7 300 475Z" fill="#f4d772" /><path d="M300 472.6V457.2" stroke="#d9a93f" stroke-width=".9" stroke-linecap="round" opacity=".45" /></g>
+                        <g class="petal" data-a="183.2" transform="rotate(183.2 300 484)"><path d="M300 475C303.3 473.7 304.6 469.2 304.2 464.4C303.9 460.9 302.3 456.4 300 452.8C297.7 456.4 296.1 460.9 295.8 464.4C295.4 469.2 296.7 473.7 300 475Z" fill="#e5bb4f" /><path d="M300 472.6V457.2" stroke="#d9a93f" stroke-width=".9" stroke-linecap="round" opacity=".45" /></g>
+                        <g class="petal" data-a="208.91" transform="rotate(208.91 300 484)"><path d="M300 475C303.3 473.7 304.6 469.2 304.2 464.4C303.9 460.9 302.3 456.4 300 452.8C297.7 456.4 296.1 460.9 295.8 464.4C295.4 469.2 296.7 473.7 300 475Z" fill="#f4d772" /><path d="M300 472.6V457.2" stroke="#d9a93f" stroke-width=".9" stroke-linecap="round" opacity=".45" /></g>
+                        <g class="petal" data-a="234.63" transform="rotate(234.63 300 484)"><path d="M300 475C303.3 473.7 304.6 469.2 304.2 464.4C303.9 460.9 302.3 456.4 300 452.8C297.7 456.4 296.1 460.9 295.8 464.4C295.4 469.2 296.7 473.7 300 475Z" fill="#e5bb4f" /><path d="M300 472.6V457.2" stroke="#d9a93f" stroke-width=".9" stroke-linecap="round" opacity=".45" /></g>
+                        <g class="petal" data-a="260.34" transform="rotate(260.34 300 484)"><path d="M300 475C303.3 473.7 304.6 469.2 304.2 464.4C303.9 460.9 302.3 456.4 300 452.8C297.7 456.4 296.1 460.9 295.8 464.4C295.4 469.2 296.7 473.7 300 475Z" fill="#f4d772" /><path d="M300 472.6V457.2" stroke="#d9a93f" stroke-width=".9" stroke-linecap="round" opacity=".45" /></g>
+                        <g class="petal" data-a="286.06" transform="rotate(286.06 300 484)"><path d="M300 475C303.3 473.7 304.6 469.2 304.2 464.4C303.9 460.9 302.3 456.4 300 452.8C297.7 456.4 296.1 460.9 295.8 464.4C295.4 469.2 296.7 473.7 300 475Z" fill="#e5bb4f" /><path d="M300 472.6V457.2" stroke="#d9a93f" stroke-width=".9" stroke-linecap="round" opacity=".45" /></g>
+                        <g class="petal" data-a="311.77" transform="rotate(311.77 300 484)"><path d="M300 475C303.3 473.7 304.6 469.2 304.2 464.4C303.9 460.9 302.3 456.4 300 452.8C297.7 456.4 296.1 460.9 295.8 464.4C295.4 469.2 296.7 473.7 300 475Z" fill="#f4d772" /><path d="M300 472.6V457.2" stroke="#d9a93f" stroke-width=".9" stroke-linecap="round" opacity=".45" /></g>
+                        <g class="petal" data-a="337.49" transform="rotate(337.49 300 484)"><path d="M300 475C303.3 473.7 304.6 469.2 304.2 464.4C303.9 460.9 302.3 456.4 300 452.8C297.7 456.4 296.1 460.9 295.8 464.4C295.4 469.2 296.7 473.7 300 475Z" fill="#e5bb4f" /><path d="M300 472.6V457.2" stroke="#d9a93f" stroke-width=".9" stroke-linecap="round" opacity=".45" /></g>
+                      </g>
+                      <g class="petal-flight" opacity="0"><path d="M300 475C303.3 473.7 304.6 469.2 304.2 464.4C303.9 460.9 302.3 456.4 300 452.8C297.7 456.4 296.1 460.9 295.8 464.4C295.4 469.2 296.7 473.7 300 475Z" fill="#e5bb4f" /><path d="M300 472.6V457.2" stroke="#d9a93f" stroke-width=".9" stroke-linecap="round" opacity=".45" /></g>
                       <circle cx="300" cy="484" r="13" fill="#e4c98a" />
                       <circle cx="300" cy="484" r="5" fill="#7d5e22" />
                     </g>
@@ -6903,6 +6927,154 @@ $schemaLogo = $base . '/frontend/og-image.svg';
           flock.forEach((b) => update(b, dt));
           since += dt;
           if (since > 0.25) { since = 0; zsort(); }
+          requestAnimationFrame(frame);
+        };
+        const start = () => { if (!running) { running = true; last = performance.now(); requestAnimationFrame(frame); } };
+        const stop = () => { running = false; };
+
+        if ("IntersectionObserver" in window) {
+          new IntersectionObserver((entries) => (entries[0].isIntersecting ? start() : stop())).observe(visual);
+        } else {
+          start();
+        }
+      })();
+    </script>
+
+    <script>
+      /* Sunflower petals in the hero scene.
+         Same approach as the chickens: static SVG markup, with every frame's
+         transform written from here. Each petal breathes almost imperceptibly;
+         every so often the wind takes one away — up into the sky, or sideways
+         left / right, chosen at random — and a fresh petal pops into its slot
+         while the loose one is still drifting. Only one petal is ever in flight.
+         With reduced motion the flower is left as static art. */
+      (() => {
+        const root = document.querySelector(".petals");
+        const visual = document.getElementById("hero-visual");
+        const flightEl = document.querySelector(".petal-flight");
+        if (!root || !visual || !flightEl) return;
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+        const TAU = Math.PI * 2;
+        const CX = 300, CY = 484, PIVOT_Y = 464; // head centre, petal middle
+        const rnd = (a, b) => a + Math.random() * (b - a);
+        const easeOutBack = (t) => 1 + 2.4 * Math.pow(t - 1, 3) + 1.4 * Math.pow(t - 1, 2);
+
+        const petals = [...root.querySelectorAll(".petal")].map((el) => ({
+          el,
+          a: parseFloat(el.dataset.a) || 0,
+          phase: rnd(0, TAU),
+          rate: rnd(0.45, 0.85),   // slow, uneven breathing
+          amp: rnd(0.35, 0.65),    // degrees: barely there
+          sway: 0,
+          s: 1,
+          state: "on",             // on | out | grow
+          timer: 0,
+          wait: 0
+        }));
+
+        const drawPetal = (p) => {
+          p.el.setAttribute(
+            "transform",
+            `rotate(${(p.a + p.sway).toFixed(2)} ${CX} ${CY}) ` +
+              `translate(${CX} ${CY}) scale(${p.s.toFixed(3)}) translate(${-CX} ${-CY})`
+          );
+        };
+
+        let flight = null, next = rnd(4, 7), clock = 0;
+
+        const drawFlight = () => {
+          const f = flight;
+          const p = Math.min(1, f.t / f.dur);
+          const fade = p > f.fadeAt ? Math.max(0, 1 - (p - f.fadeAt) / (1 - f.fadeAt)) : 1;
+          let x, y;
+          if (f.axis === "up") {
+            x = f.amp * Math.sin(f.t * f.freq + f.phase) * Math.min(1, f.t / 1.6) + f.drift * f.t;
+            y = -f.speed * f.t;
+          } else {
+            x = f.dir * f.speed * f.t;
+            y = -f.bow * Math.sin(p * Math.PI) - 5 * p;
+          }
+          const spin = f.spin + f.spinV * f.t;
+          flightEl.setAttribute("opacity", fade.toFixed(3));
+          flightEl.setAttribute(
+            "transform",
+            `translate(${x.toFixed(2)} ${y.toFixed(2)}) ` +
+              `rotate(${f.ang.toFixed(2)} ${CX} ${CY}) rotate(${spin.toFixed(2)} ${CX} ${PIVOT_Y})`
+          );
+        };
+
+        const launch = () => {
+          const ready = petals.filter((p) => p.state === "on");
+          if (!ready.length) return false;
+          const p = ready[(Math.random() * ready.length) | 0];
+          const axis = Math.random() < 0.5 ? "up" : "side";
+          const dir = Math.random() < 0.5 ? -1 : 1;
+          flight = {
+            axis, dir,
+            ang: p.a + p.sway,
+            t: 0,
+            dur: axis === "up" ? rnd(9, 11) : rnd(7, 9),
+            speed: axis === "up" ? rnd(26, 34) : rnd(30, 40),
+            amp: rnd(10, 16),
+            freq: rnd(0.8, 1.3),
+            phase: rnd(0, TAU),
+            drift: rnd(-2.2, 2.2),
+            bow: rnd(10, 16),
+            spin: 0,
+            spinV: rnd(14, 28) * (Math.random() < 0.5 ? -1 : 1),
+            fadeAt: axis === "up" ? 0.82 : 0.74
+          };
+          flightEl.querySelector("path").setAttribute("fill", p.el.querySelector("path").getAttribute("fill"));
+          flightEl.setAttribute("opacity", "1");
+          p.state = "out";
+          p.s = 0.001; // the flight copy covers the slot exactly
+          p.wait = 5;  // hold the empty slot for a beat before the new petal pops in
+          drawPetal(p);
+          drawFlight();
+          return true;
+        };
+
+        const update = (dt) => {
+          clock += dt;
+          for (const p of petals) {
+            if (p.state === "out") {
+              p.wait -= dt;
+              if (p.wait <= 0) { p.state = "grow"; p.timer = 0; p.s = 0.001; }
+            } else if (p.state === "grow") {
+              p.timer += dt;
+              const t = Math.min(1, p.timer / 0.52);
+              p.s = Math.max(0.001, Math.min(1.06, easeOutBack(t)));
+              if (t >= 1) { p.s = 1; p.state = "on"; }
+            } else {
+              p.sway =
+                p.amp * Math.sin(clock * p.rate + p.phase) +
+                p.amp * 0.38 * Math.sin(clock * p.rate * 1.71 + p.phase * 2.1);
+            }
+            drawPetal(p);
+          }
+
+          if (flight) {
+            flight.t += dt;
+            if (flight.t >= flight.dur) {
+              flightEl.setAttribute("opacity", "0");
+              flight = null;
+              next = rnd(6, 12);
+            } else {
+              drawFlight();
+            }
+          } else {
+            next -= dt;
+            if (next <= 0 && !launch()) next = 0.8;
+          }
+        };
+
+        let running = false, last = 0;
+        const frame = (now) => {
+          if (!running) return;
+          const dt = Math.min(0.05, (now - last) / 1000 || 0.016);
+          last = now;
+          update(dt);
           requestAnimationFrame(frame);
         };
         const start = () => { if (!running) { running = true; last = performance.now(); requestAnimationFrame(frame); } };
