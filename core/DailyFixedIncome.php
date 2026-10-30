@@ -25,6 +25,11 @@ class DailyFixedIncome
      */
     public static function processDailyPayout(): array
     {
+        if (function_exists('setting')) {
+            if (setting('commissions_enabled', '1') !== '1' || setting('commission_dfi_enabled', '1') !== '1') {
+                return ['processed' => 0, 'paid' => 0.0, 'skipped' => 0, 'reason' => 'disabled'];
+            }
+        }
         $pdo = db();
 
         $processed = 0;

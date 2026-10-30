@@ -22,8 +22,23 @@ $freeEnabled    = setting('free_registration_enabled', '1') === '1';
 // forced on. In that state there is nothing to select — default to free and
 // let the member go straight to account setup.
 $packagesDisabled = $packagesDisabled ?? (setting('packages_disabled', '0') === '1');
-$skipSelectStep   = $skipSelectStep   ?? ($freeEnabled && empty($packages));
+$skipSelectStep   = $skipSelectStep   ?? ($freeEnabled && ($packagesDisabled || empty($packages)));
+// Binary placement is meaningless when there is no package to pair (packages
+// disabled / none active) or when Binary Pairing is switched off in
+// Compensations. In those states the placement controls are not rendered at
+// all, so members are never asked for an upline that can never pay out.
+$binaryUiEnabled  = $binaryUiEnabled  ?? binary_placement_ui_enabled($packages);
 $twoStepFlow      = $isReferralMode || $skipSelectStep;
+// Which payment method is preselected? Free wins while it is enabled; otherwise
+// a registrar who can afford a package pays with the e-wallet, else a code.
+$defaultPaymentMethod = $defaultPaymentMethod
+  ?? ($freeEnabled ? 'free' : (($isLoggedIn && $canUseEwallet) ? 'ewallet' : 'code'));
+// Free keeps panel 1 (the payment chooser) but collapses the step bar: there is
+// no package to pick, so "Select Package" must not be shown.
+$freeMode = !$twoStepFlow && !$isReferralMode && $defaultPaymentMethod === 'free';
+// "Select Package" only when the catalogue can actually be shown (logged-in
+// e-wallet). A code decides the package, so that step is just "Payment".
+$stepOneLabel = ($isLoggedIn && $defaultPaymentMethod === 'ewallet') ? 'Select Package' : 'Payment';
 $degradedReferral = ($degradedReferral ?? false);
 $prefillUpline   = $prefillUpline   ?? '';
 $prefillPosition = $prefillPosition ?? 'left';
@@ -100,18 +115,17 @@ if (!$isLoggedIn && !$prefillSponsor) {
 
               <!-- Step bar -->
               <div class="steps-bar" id="stepsBar">
-                <?php if (!$twoStepFlow): ?>
-                  <div class="reg-step active" id="step-ind-1">
-                    <div class="step-dot">1</div>
-                    <div class="step-text">Select Package</div>
-                  </div>
-                <?php endif; ?>
-                <div class="reg-step <?= $twoStepFlow ? 'active' : '' ?>" id="step-ind-2">
-                  <div class="step-dot"><?= $twoStepFlow ? '1' : '2' ?></div>
+                <div class="reg-step <?= (!$twoStepFlow && !$freeMode) ? 'active' : '' ?>" id="step-ind-1"
+                  <?= ($twoStepFlow || $freeMode) ? 'style="display:none;"' : '' ?>>
+                  <div class="step-dot">1</div>
+                  <div class="step-text" id="step-ind-1-label"><?= e($stepOneLabel) ?></div>
+                </div>
+                <div class="reg-step <?= ($twoStepFlow || $freeMode) ? 'active' : '' ?>" id="step-ind-2">
+                  <div class="step-dot" id="step-ind-2-dot"><?= ($twoStepFlow || $freeMode) ? '1' : '2' ?></div>
                   <div class="step-text">Account Setup</div>
                 </div>
                 <div class="reg-step" id="step-ind-3">
-                  <div class="step-dot"><?= $twoStepFlow ? '2' : '3' ?></div>
+                  <div class="step-dot" id="step-ind-3-dot"><?= ($twoStepFlow || $freeMode) ? '2' : '3' ?></div>
                   <div class="step-text">Confirm</div>
                 </div>
               </div>
@@ -124,7 +138,7 @@ if (!$isLoggedIn && !$prefillSponsor) {
                   <input type="hidden" name="referral_mode" value="1">
                   <input type="hidden" name="ref_link" value="1">
                 <?php else: ?>
-                  <input type="hidden" name="referral_mode" id="referralMode" value="<?= $skipSelectStep ? '1' : '' ?>">
+                  <input type="hidden" name="referral_mode" id="referralMode" value="<?= ($skipSelectStep || $freeMode) ? '1' : '' ?>">
                 <?php endif; ?>
 
                 <!-- ── STEP 1 ── -->
@@ -138,16 +152,16 @@ if (!$isLoggedIn && !$prefillSponsor) {
                       <div class="position-toggle" style="grid-template-columns:<?= $freeEnabled ? '1fr 1fr 1fr' : '1fr 1fr' ?>;">
                         <?php if ($freeEnabled): ?>
                           <div class="position-option">
-                            <input type="radio" id="pay_free" name="payment_method" value="free" checked required>
+                            <input type="radio" id="pay_free" name="payment_method" value="free" <?= $defaultPaymentMethod === 'free' ? 'checked' : '' ?> required>
                             <label class="position-label" for="pay_free">🎁 Free</label>
                           </div>
                         <?php endif; ?>
                         <div class="position-option">
-                          <input type="radio" id="pay_code" name="payment_method" value="code" <?= $freeEnabled ? '' : 'checked' ?>>
+                          <input type="radio" id="pay_code" name="payment_method" value="code" <?= $defaultPaymentMethod === 'code' ? 'checked' : '' ?>>
                           <label class="position-label" for="pay_code">🎫 Code</label>
                         </div>
                         <div class="position-option">
-                          <input type="radio" id="pay_ewallet" name="payment_method" value="ewallet">
+                          <input type="radio" id="pay_ewallet" name="payment_method" value="ewallet" <?= $defaultPaymentMethod === 'ewallet' ? 'checked' : '' ?>>
                           <label class="position-label" for="pay_ewallet">💳 E-Wallet</label>
                         </div>
                       </div>
@@ -162,11 +176,11 @@ if (!$isLoggedIn && !$prefillSponsor) {
                       <div class="mb-3">
                         <div class="position-toggle" style="grid-template-columns:1fr 1fr;">
                           <div class="position-option">
-                            <input type="radio" id="pay_free" name="payment_method" value="free" checked required>
+                            <input type="radio" id="pay_free" name="payment_method" value="free" <?= $defaultPaymentMethod === 'free' ? 'checked' : '' ?> required>
                             <label class="position-label" for="pay_free">🎁 Free</label>
                           </div>
                           <div class="position-option">
-                            <input type="radio" id="pay_code" name="payment_method" value="code">
+                            <input type="radio" id="pay_code" name="payment_method" value="code" <?= $defaultPaymentMethod === 'code' ? 'checked' : '' ?>>
                             <label class="position-label" for="pay_code">🎫 Registration Code</label>
                           </div>
                         </div>
@@ -175,6 +189,10 @@ if (!$isLoggedIn && !$prefillSponsor) {
                       <input type="hidden" name="payment_method" value="code">
                     <?php endif; ?>
                   <?php endif; ?>
+
+                  <div id="freeLimitNotice" class="alert alert-info py-2 mb-3" style="font-size:.8rem;display:none;">
+                    🎁 Free accounts are not placed in the binary network until the member activates.
+                  </div>
 
                   <!-- Code Input -->
                   <div id="codeSection" style="display:none;">
@@ -193,7 +211,7 @@ if (!$isLoggedIn && !$prefillSponsor) {
                   <?php if ($isLoggedIn): ?>
                     <!-- Package Selector (E-Wallet) -->
                     <div id="packageSection" style="display:none;">
-                      <?php if ($canUseEwallet): ?>
+                      <?php if (!empty($packages)): ?>
                         <div class="mb-3">
                           <label class="form-label">Package <span class="text-danger">*</span></label>
                           <?php $pkgCount = count($packages); ?>
@@ -235,24 +253,30 @@ if (!$isLoggedIn && !$prefillSponsor) {
                             </div>
                           <?php endif; ?>
                         </div>
-                        <div class="alert alert-info py-2 mb-3" style="font-size:.8rem;">
-                          💳 Your balance:
-                          <strong><?= fmt_money((float)($currentUser['ewallet_balance'] ?? 0)) ?></strong>
-                          (<?= fmt_money((float)($currentUser['withdrawable_balance'] ?? 0)) ?> withdrawable)
-                        </div>
-                      <?php else: ?>
-                        <div class="alert alert-warning py-3 mb-3">
-                          <div class="d-flex align-items-center gap-2">
-                            <span style="font-size:1.25rem;">⚠️</span>
-                            <div>
-                              <strong>Insufficient E-Wallet Balance</strong>
-                              <div style="font-size:.8rem;opacity:.9;">
-                                Your current balance is <?= fmt_money((float)($currentUser['ewallet_balance'] ?? 0)) ?>.
-                                The minimum entry fee is <?= fmt_money((float)(!empty($packages) ? min(array_map(fn($p) => (float)$p['entry_fee'], $packages)) : 0)) ?>.
-                                Please top up or switch to registration code.
+                        <?php if ($canUseEwallet): ?>
+                          <div class="alert alert-info py-2 mb-3" style="font-size:.8rem;">
+                            💳 Your balance:
+                            <strong><?= fmt_money((float)($currentUser['ewallet_balance'] ?? 0)) ?></strong>
+                            (<?= fmt_money((float)($currentUser['withdrawable_balance'] ?? 0)) ?> withdrawable)
+                          </div>
+                        <?php else: ?>
+                          <div class="alert alert-warning py-3 mb-3">
+                            <div class="d-flex align-items-center gap-2">
+                              <span style="font-size:1.25rem;">⚠️</span>
+                              <div>
+                                <strong>Insufficient E-Wallet Balance</strong>
+                                <div style="font-size:.8rem;opacity:.9;">
+                                  Your current balance is <?= fmt_money((float)($currentUser['ewallet_balance'] ?? 0)) ?>.
+                                  The minimum entry fee is <?= fmt_money((float)(!empty($packages) ? min(array_map(fn($p) => (float)$p['entry_fee'], $packages)) : 0)) ?>.
+                                  Please top up or switch to registration code.
+                                </div>
                               </div>
                             </div>
                           </div>
+                        <?php endif; ?>
+                      <?php else: ?>
+                        <div class="alert alert-warning py-3 mb-3">
+                          No packages are available right now.
                         </div>
                       <?php endif; ?>
                     </div>
@@ -286,7 +310,7 @@ if (!$isLoggedIn && !$prefillSponsor) {
                   <?php endif; ?>
                   <?php if ($skipSelectStep && !$isReferralMode): ?>
                     <div class="alert alert-info py-2 mb-3" style="font-size:.85rem;">
-                      📦 Packages are currently disabled — new accounts start on the free (pending) plan. You can activate with a package later once packages are available again.
+                      📦 Packages are currently disabled — new accounts start on the free (active) plan.
                     </div>
                   <?php endif; ?>
                   <div class="mb-3">
@@ -325,8 +349,8 @@ if (!$isLoggedIn && !$prefillSponsor) {
                       <?= $lockSponsor ? 'readonly' : 'autocomplete="off"' ?> required>
                     <div class="form-text" id="sponsorHint"></div>
                   </div>
-                  <?php if ($isLoggedIn && !$isReferralMode && ($registrarHasBinary ?? false) && $freeEnabled): ?>
-                    <div id="hasBinaryRow" class="mb-3">
+                  <?php if ($binaryUiEnabled && $isLoggedIn && !$isReferralMode && ($registrarHasBinary ?? false)): ?>
+                    <div id="hasBinaryRow" class="mb-3" style="display:none;">
                       <label class="form-label">Binary Placement</label>
                       <div class="form-check form-switch">
                         <input class="form-check-input" type="checkbox" role="switch" id="hasBinary" name="has_binary" value="1" checked>
@@ -336,6 +360,7 @@ if (!$isLoggedIn && !$prefillSponsor) {
                     </div>
                   <?php endif; ?>
 
+                  <?php if ($binaryUiEnabled): ?>
                   <div id="binaryModeSection" style="display:none;" class="mb-3">
                     <label class="form-label">Binary Connection</label>
                     <div class="position-toggle" style="grid-template-columns:1fr 1fr;">
@@ -382,6 +407,7 @@ if (!$isLoggedIn && !$prefillSponsor) {
                       <div class="form-text" id="positionHint"></div>
                     </div>
                   </div>
+                  <?php endif; ?>
                   <div class="d-flex gap-2">
                     <?php if (!$twoStepFlow): ?>
                       <button type="button" class="btn btn-outline-secondary" onclick="goStep(1); document.getElementById('referralAlert').style.display='none';">← Back</button>
@@ -427,6 +453,7 @@ if (!$isLoggedIn && !$prefillSponsor) {
                           <td>Sponsor</td>
                           <td id="rev_sponsor">—</td>
                         </tr>
+                        <?php if ($binaryUiEnabled): ?>
                         <tr id="revUplineRow">
                           <td>Upline</td>
                           <td id="rev_upline">—</td>
@@ -435,12 +462,15 @@ if (!$isLoggedIn && !$prefillSponsor) {
                           <td>Position</td>
                           <td id="rev_position">—</td>
                         </tr>
+                        <?php endif; ?>
                       </table>
                     </div>
                   </div>
+                  <?php if ($binaryUiEnabled): ?>
                   <div class="alert alert-warning py-2 mb-3" style="font-size:.8rem;">
                     ⚠️ Binary position cannot be changed after registration.
                   </div>
+                  <?php endif; ?>
                   <div class="d-flex gap-2">
                     <button type="button" class="btn btn-outline-secondary" onclick="goStep(2)">← Back</button>
                     <button type="submit" class="btn btn-primary flex-grow-1 btn-lg" id="submitBtn">
@@ -488,6 +518,9 @@ if (!$isLoggedIn && !$prefillSponsor) {
   const PREFILL_POSITION = <?= json_encode($prefillPosition) ?>;
   const REFERRAL_DEFERS = <?= (($referralDefers ?? false) === true) ? 'true' : 'false' ?>;
   const REGISTRAR_HAS_BINARY = <?= ($isLoggedIn && ($registrarHasBinary ?? false)) ? 'true' : 'false' ?>;
+  const BINARY_UI_ENABLED = <?= $binaryUiEnabled ? 'true' : 'false' ?>;
+  const DEFAULT_PAYMENT_METHOD = <?= json_encode($defaultPaymentMethod) ?>;
+  const GUEST = !IS_LOGGED_IN;
 
   let codeData = {},
     selectedPkg = {},
@@ -495,14 +528,19 @@ if (!$isLoggedIn && !$prefillSponsor) {
     sponsorOk = false,
     uplineOk = false,
     slotData = {},
-    binaryEnabled = true,
+    binaryEnabled = BINARY_UI_ENABLED,
     binaryMode = 'manual',
     autoSuggestion = null,
     manualBinaryActive = false,
-    autoBinaryActive = false;
+    autoBinaryActive = false,
+    currentStep = <?= $twoStepFlow ? 2 : 1 ?>;
 
   // Show/hide the binary placement sections based on the selected package.
   function setBinaryEnabled(on) {
+    if (!BINARY_UI_ENABLED) {
+      binaryEnabled = false;
+      return;
+    }
     binaryEnabled = !!on;
     const section = document.getElementById('binarySection');
     if (!section || IS_REFERRAL_MODE) return;
@@ -584,7 +622,7 @@ if (!$isLoggedIn && !$prefillSponsor) {
 
   // Recompute every binary UI element from the current method/package/code.
   function applyBinaryState() {
-    if (IS_REFERRAL_MODE) return;
+    if (IS_REFERRAL_MODE || !BINARY_UI_ENABLED) return;
 
     const method = getPaymentMethod();
     const pairing = currentPairingEnabled();
@@ -598,21 +636,26 @@ if (!$isLoggedIn && !$prefillSponsor) {
     }
 
     if (method === 'free') {
-      // Free: only a binary registrar places, controlled interactively by the toggle.
+      // Free access is limited: no binary placement at registration. The
+      // member chooses their binary connection when they activate.
       autoBinaryActive = false;
+      manualBinaryActive = false;
+      const row = document.getElementById('hasBinaryRow');
+      if (row) row.style.display = 'none';
       if (toggle) {
-        toggle.disabled = false;
-        document.getElementById('hasBinaryHint').textContent = 'Toggle ON to connect the member to the binary network now. Toggle OFF to defer the binary connection until the member activates.';
-        manualBinaryActive = toggle.checked && REGISTRAR_HAS_BINARY;
-      } else {
-        manualBinaryActive = false;
+        toggle.checked = false;
+        toggle.disabled = true;
+        const hint = document.getElementById('hasBinaryHint');
+        if (hint) hint.textContent = 'Free members are not placed in the binary network until they activate.';
       }
-      setBinaryEnabled(manualBinaryActive);
+      setBinaryEnabled(false);
       return;
     }
 
     // Direct (code / e-wallet):
     autoBinaryActive = false;
+    const binaryRow = document.getElementById('hasBinaryRow');
+    if (binaryRow) binaryRow.style.display = '';
     if (!pairing) {
       // Binary-less package → toggle locked OFF, no placement at registration.
       manualBinaryActive = false;
@@ -663,16 +706,13 @@ if (!$isLoggedIn && !$prefillSponsor) {
   }
 
   function goStep(n) {
-    const steps = IS_REFERRAL_MODE ? [2, 3] : [1, 2, 3];
+    currentStep = n;
+    const steps = (SKIP_SELECT_STEP || IS_REFERRAL_MODE) ? [2, 3] : [1, 2, 3];
     steps.forEach(i => {
       const el = document.getElementById('step' + i);
       if (el) el.style.display = i === n ? 'block' : 'none';
     });
-    steps.forEach(i => {
-      const el = document.getElementById('step-ind-' + i);
-      if (!el) return;
-      el.className = 'reg-step ' + (i < n ? 'done' : i === n ? 'active' : '');
-    });
+    syncStepBar();
     const flash = document.getElementById('flashArea');
     if (flash) flash.innerHTML = '';
     window.scrollTo({
@@ -700,11 +740,53 @@ if (!$isLoggedIn && !$prefillSponsor) {
     return document.querySelector('[name=payment_method]:checked')?.value || 'code';
   }
 
+  // ── Step bar ──────────────────────────────────────────────────
+  // skip:  no package step at all (packages disabled / referral link)
+  // free:  package exists but Free is selected → 2 indicators; panel 1 is the
+  //        payment chooser and belongs to "Account Setup"
+  // paid:  Code / E-Wallet → the normal 3-step flow
+  function stepMode() {
+    if (SKIP_SELECT_STEP || IS_REFERRAL_MODE) return 'skip';
+    return getPaymentMethod() === 'free' ? 'free' : 'paid';
+  }
+
+  function panelToIndicator(n) {
+    return (stepMode() === 'free' && n === 1) ? 2 : n;
+  }
+
+  function stepOneLabel() {
+    if (!IS_LOGGED_IN || PKG_COUNT === 0) return 'Payment';
+    return getPaymentMethod() === 'ewallet' ? 'Select Package' : 'Payment';
+  }
+
+  function syncStepBar() {
+    const mode = stepMode();
+    const paid = mode === 'paid';
+    const ind1 = document.getElementById('step-ind-1');
+    if (ind1) ind1.style.display = paid ? '' : 'none';
+    const dot2 = document.getElementById('step-ind-2-dot');
+    const dot3 = document.getElementById('step-ind-3-dot');
+    if (dot2) dot2.textContent = paid ? '2' : '1';
+    if (dot3) dot3.textContent = paid ? '3' : '2';
+    const label1 = document.getElementById('step-ind-1-label');
+    if (label1) label1.textContent = stepOneLabel();
+    const active = panelToIndicator(currentStep);
+    [1, 2, 3].forEach(i => {
+      const el = document.getElementById('step-ind-' + i);
+      if (el) el.className = 'reg-step ' + (i < active ? 'done' : i === active ? 'active' : '');
+    });
+    const freeNotice = document.getElementById('freeLimitNotice');
+    if (freeNotice) {
+      freeNotice.style.display = (mode === 'free' && IS_LOGGED_IN) ? '' : 'none';
+    }
+  }
+
   function updateStep1State() {
     if (IS_REFERRAL_MODE) return;
     // No selectable package: everything is free/pending, so only the binary
     // placement state needs to be derived from the registrar.
     if (SKIP_SELECT_STEP) {
+      syncStepBar();
       applyBinaryState();
       return;
     }
@@ -716,6 +798,8 @@ if (!$isLoggedIn && !$prefillSponsor) {
     const pkgSel = document.getElementById('packageSelect');
     const toBtn = document.getElementById('toStep2Btn');
     const refMode = document.getElementById('referralMode');
+
+    syncStepBar();
 
     if (method === 'free') {
       codeSec.style.display = 'none';
@@ -942,7 +1026,8 @@ if (!$isLoggedIn && !$prefillSponsor) {
 
   // ── Upline + slot ─────────────────────────────────────────────
   let upTimer;
-  document.getElementById('upline_username').addEventListener('input', function() {
+  const uplineEl = document.getElementById('upline_username');
+  if (uplineEl) uplineEl.addEventListener('input', function() {
     uplineOk = false;
     slotData = {};
     clearTimeout(upTimer);
@@ -1115,26 +1200,33 @@ if (!$isLoggedIn && !$prefillSponsor) {
     if (PREFILL_SPONSOR) {
       checkSponsor(PREFILL_SPONSOR);
     }
-    if (REFERRAL_DEFERS) {
-      // Sponsor has no binary → no placement at registration. The member
-      // decides their binary connection at activation (Auto by default).
-      binaryEnabled = false;
-      uplineOk = false;
-      const binSec = document.getElementById('binarySection');
-      if (binSec) binSec.style.display = 'none';
-      const upEl = document.getElementById('upline_username');
-      const leftEl = document.getElementById('pos_left');
-      const rightEl = document.getElementById('pos_right');
-      if (upEl) {
-        upEl.required = false;
-        upEl.value = '';
+    if (BINARY_UI_ENABLED) {
+      if (REFERRAL_DEFERS) {
+        // Sponsor has no binary → no placement at registration. The member
+        // decides their binary connection at activation (Auto by default).
+        binaryEnabled = false;
+        uplineOk = false;
+        const binSec = document.getElementById('binarySection');
+        if (binSec) binSec.style.display = 'none';
+        const upEl = document.getElementById('upline_username');
+        const leftEl = document.getElementById('pos_left');
+        const rightEl = document.getElementById('pos_right');
+        if (upEl) {
+          upEl.required = false;
+          upEl.value = '';
+        }
+        if (leftEl) leftEl.required = false;
+        if (rightEl) rightEl.required = false;
+      } else if (PREFILL_UPLINE) {
+        checkUpline(PREFILL_UPLINE);
+        uplineOk = true;
+      } else {
+        uplineOk = false;
       }
-      if (leftEl) leftEl.required = false;
-      if (rightEl) rightEl.required = false;
-    } else if (PREFILL_UPLINE) {
-      checkUpline(PREFILL_UPLINE);
-      uplineOk = true;
     } else {
+      // Binary placement controls are not rendered (packages disabled or
+      // Binary Pairing off) — nothing to validate or prefill.
+      binaryEnabled = false;
       uplineOk = false;
     }
 

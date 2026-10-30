@@ -702,6 +702,14 @@ INSERT INTO packages (
   100.00, 90, 'active'
 );
 
+-- Global compensation toggles
+INSERT IGNORE INTO settings (key_name, value) VALUES
+  ('commissions_enabled', '1'),
+  ('commission_direct_ref_enabled', '1'),
+  ('commission_indirect_ref_enabled', '1'),
+  ('commission_binary_enabled', '1'),
+  ('commission_dfi_enabled', '1');
+
 -- Indirect referral levels for starter package
 INSERT INTO package_indirect_levels (package_id, level, bonus) VALUES
   (1, 1,  300.00),

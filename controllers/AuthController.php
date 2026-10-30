@@ -156,6 +156,10 @@ class AuthController
         // ever off while no package is active.
         $packagesDisabled = setting('packages_disabled', '0') === '1';
         $skipSelectStep   = $freeEnabled && ($packagesDisabled || empty($packages));
+        // Binary placement only makes sense when there is a live package to
+        // pair AND Binary Pairing is enabled in Compensations. Otherwise the
+        // register form must not ask for an upline/position at all.
+        $binaryUiEnabled  = binary_placement_ui_enabled($packages);
 
         // Can the logged-in user afford e-wallet registration?
         $canUseEwallet = false;
@@ -163,6 +167,14 @@ class AuthController
             $minFee = min(array_map(fn($p) => (float)$p['entry_fee'], $packages));
             $canUseEwallet = Ewallet::balance(Auth::actingAdminId()) >= $minFee;
         }
+
+        // Default payment method: free wins whenever it is enabled; otherwise a
+        // registrar who can afford a package pays with the e-wallet, else a
+        // registration code. The view uses this for the initial radio state and
+        // step bar, so the first render matches what JS computes on load.
+        $defaultPaymentMethod = $freeEnabled
+            ? 'free'
+            : ($canUseEwallet ? 'ewallet' : 'code');
 
         // Does the logged-in registrar participate in the binary network?
         // Binary-less registrars never pre-place members at registration —
@@ -245,6 +257,41 @@ class AuthController
         return null; // Tree is completely full
     }
 
+    /**
+     * Does this registration require (and accept) a binary placement?
+     *
+     * Free access is limited: signups from the register page and the genealogy
+     * modal are never placed — they choose their binary connection when they
+     * activate. Only a real referral link (?ref=1) anchors a free signup under
+     * the sponsor's next free slot.
+     *
+     * Paid registrations are placed only when the selected package/code
+     * participates in the binary network.
+     *
+     * @param bool $binaryUiEnabled     Placement controls were rendered.
+     * @param bool $isReferralMode      Free/pending flow (referral_mode=1).
+     * @param bool $forceReferralAnchor Real referral link (?ref=1).
+     * @param bool $hasUpline           An upline username was submitted.
+     * @param int  $packageId           Paid package id; 0 for free signups.
+     * @param bool $pairingEnabled      Selected package/code has pairing on.
+     */
+    public static function placementRequired(
+        bool $binaryUiEnabled,
+        bool $isReferralMode,
+        bool $forceReferralAnchor,
+        bool $hasUpline,
+        int $packageId,
+        bool $pairingEnabled
+    ): bool {
+        if (!$binaryUiEnabled) {
+            return false;
+        }
+        if ($isReferralMode) {
+            return $forceReferralAnchor && $hasUpline;
+        }
+        return $packageId > 0 && $pairingEnabled;
+    }
+
     public function doRegister(): void
     {
         csrf_verify();
@@ -269,6 +316,7 @@ class AuthController
         $packagesAll = Package::all(true);
         $packagesDisabledSetting = setting('packages_disabled', '0') === '1';
         $skipSelectStepCoerce = $packagesDisabledSetting || empty($packagesAll);
+        $binaryUiEnabled = binary_placement_ui_enabled($packagesAll);
         if ($skipSelectStepCoerce) {
             $paymentMethod = 'standard';
             $_POST['payment_method'] = 'standard';
@@ -373,8 +421,10 @@ class AuthController
         }
 
         // ── Binary placement ──
-        //   Free:     only binary registrars place (Has Binary toggle ON);
-        //             binary-less registrars defer to activation (unplaced pending).
+        //   Free:     never placed from the register page / genealogy modal.
+        //             Free access is limited — the member chooses a binary
+        //             connection at activation. Only a real referral link
+        //             (?ref=1) anchors the signup under the sponsor's slot.
         //   Direct:   binary packages always require placement — a binary registrar
         //             places manually (toggle locked ON), a binary-less registrar
         //             uses network-wide auto-select or picks their own upline.
@@ -386,7 +436,6 @@ class AuthController
             $pairingEnabled = $pkg ? Package::hasPairing($packageId) : true;
         }
 
-        $hasBinary          = ($_POST['has_binary'] ?? '0') === '1';
         $binaryMode         = $_POST['binary_mode'] ?? 'manual';
         $registrarHasBinary = $wasLoggedIn && (
             User::isPrimaryAdmin((int)(Auth::actingUser()['id'] ?? 0))
@@ -397,24 +446,16 @@ class AuthController
         // always use the sponsor-anchored, pre-filled placement.
         $forceReferralAnchor = ($_POST['ref_link'] ?? '') === '1';
 
-        if ($isReferralMode) {
-            // Free / pending flow:
-            //  - Real referral links (?ref=1) from a binary sponsor keep the
-            //    sponsor-anchored placement; from a non-binary sponsor the
-            //    upline field is empty → member registers UNPLACED and chooses
-            //    their binary connection at activation (network-wide Auto by default).
-            //  - Regular-page / genealogy-modal free signups place only when a
-            //    binary registrar keeps the Has Binary toggle ON.
-            $requirePlacement = ($forceReferralAnchor && !empty($uplineU))
-                || ($registrarHasBinary && $hasBinary);
-        } elseif ($packageId > 0 && $pairingEnabled) {
-            // Direct registration into a binary package.
-            $requirePlacement = true;
-        } else {
-            // Free referral registration — only a binary registrar may place
-            // (and only when the Has Binary toggle is ON).
-            $requirePlacement = $registrarHasBinary && $hasBinary;
-        }
+        // Free signups post no placement (and forged has_binary/upline fields
+        // are ignored); only a real referral link can anchor them.
+        $requirePlacement = self::placementRequired(
+            $binaryUiEnabled,
+            $isReferralMode,
+            $forceReferralAnchor,
+            $uplineU !== '',
+            $packageId,
+            $pairingEnabled
+        );
 
         if ($requirePlacement) {
             $useAuto = !$isReferralMode && !$registrarHasBinary && $binaryMode === 'auto';

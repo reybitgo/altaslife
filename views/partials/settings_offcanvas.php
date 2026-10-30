@@ -14,15 +14,16 @@ if (!Auth::isAdmin()) {
 }
 
 $offcanvasTabs = [
-    'basics'       => ['icon' => '🌐', 'label' => 'Site Basics'],
-    'maint'        => ['icon' => '🛡️', 'label' => 'Maintenance & Security'],
-    'payments'     => ['icon' => '🔄', 'label' => 'Payments'],
-    'ewallet'      => ['icon' => '💱', 'label' => 'E-Wallet Transfers'],
-    'payouts'      => ['icon' => '💸', 'label' => 'Payout Methods'],
-    'password'     => ['icon' => '🔒', 'label' => 'Change Password'],
-    'reset'        => ['icon' => '⏱️', 'label' => 'Daily Cap Reset'],
-    'documents'    => ['icon' => '🧾', 'label' => 'Invoices & Documents'],
-    'overview'     => ['icon' => 'ℹ️', 'label' => 'System Overview'],
+    'basics'        => ['icon' => '🌐', 'label' => 'Site Basics'],
+    'maint'         => ['icon' => '🛡️', 'label' => 'Maintenance & Security'],
+    'payments'      => ['icon' => '🔄', 'label' => 'Payments'],
+    'ewallet'       => ['icon' => '💱', 'label' => 'E-Wallet Transfers'],
+    'payouts'       => ['icon' => '💸', 'label' => 'Payout Methods'],
+    'compensations' => ['icon' => '💰', 'label' => 'Compensations'],
+    'password'      => ['icon' => '🔒', 'label' => 'Change Password'],
+    'reset'         => ['icon' => '⏱️', 'label' => 'Daily Cap Reset'],
+    'documents'     => ['icon' => '🧾', 'label' => 'Invoices & Documents'],
+    'overview'      => ['icon' => 'ℹ️', 'label' => 'System Overview'],
 ];
 $isSettingsPage = ($_GET['page'] ?? '') === 'admin_settings';
 ?>

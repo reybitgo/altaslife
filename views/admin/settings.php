@@ -368,6 +368,66 @@
             </div>
 
             <!-- ════════════════════════════════════════════
+             TAB 5B — COMPENSATIONS
+             ════════════════════════════════════════════ -->
+            <div class="tab-pane fade" id="tabPane-compensations" role="tabpanel">
+                <form method="POST" action="<?= APP_URL ?>/?page=admin_save_settings" id="compensationsForm">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="group" value="compensations">
+                    <div class="card">
+                        <div class="card-header d-flex align-items-center gap-2">
+                            <span style="width:28px;height:28px;background:#f0fdf4;border-radius:.45rem;display:flex;align-items:center;justify-content:center;font-size:.85rem;">💰</span>
+                            <span class="card-title">Global Compensation Controls</span>
+                        </div>
+                        <div class="card-body">
+                            <div id="compensationsPackagesDisabledNotice" class="alert alert-warning py-2 mb-3" style="font-size:.8rem; <?= setting('packages_disabled', '0') === '1' ? '' : 'display:none;' ?>">
+                                <strong>Packages are disabled.</strong> Commissions are tied to packages, so all compensation toggles are disabled while packages are inactive.
+                            </div>
+                            <div class="alert alert-info py-2 mb-3" style="font-size:.8rem;">
+                                <strong>Note:</strong> When the master switch is off, <u>all</u> commissions are disabled globally regardless of package configuration. Use this when there are no packages or to temporarily stop all commission payouts.
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="commissions_enabled" id="commissionsEnabled" value="1" <?= setting('commissions_enabled', '1') === '1' ? 'checked' : '' ?>>
+                                    <label class="form-check-label fw-semibold" for="commissionsEnabled">🛑 Master: Enable All Commissions</label>
+                                </div>
+                                <div class="form-text">Turning this OFF disables Direct Referral, Indirect/Unilevel, Binary Pairing, and DFI payouts.</div>
+                            </div>
+                            <hr class="my-3">
+                            <label class="form-label fw-semibold mb-2">Per-Type Toggles</label>
+                            <div class="mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input comp-type" type="checkbox" name="commission_direct_ref_enabled" id="compDirect" value="1" <?= setting('commission_direct_ref_enabled', '1') === '1' ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="compDirect">👥 Direct Referral</label>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input comp-type" type="checkbox" name="commission_indirect_ref_enabled" id="compIndirect" value="1" <?= setting('commission_indirect_ref_enabled', '1') === '1' ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="compIndirect">🔗 Indirect/Unilevel Referral</label>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input comp-type" type="checkbox" name="commission_binary_enabled" id="compBinary" value="1" <?= setting('commission_binary_enabled', '1') === '1' ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="compBinary">🤝 Binary Pairing</label>
+                                </div>
+                            </div>
+                            <div class="mb-0">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input comp-type" type="checkbox" name="commission_dfi_enabled" id="compDfi" value="1" <?= setting('commission_dfi_enabled', '1') === '1' ? 'checked' : '' ?>>
+                                    <label class="form-check-label" for="compDfi">📅 Daily Fixed Income (DFI)</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer border-top-0 pt-0">
+                            <button type="submit" class="btn btn-primary w-100">💾 Save Compensation Settings</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- ════════════════════════════════════════════
              TAB 6 — CHANGE PASSWORD (external form)
              ════════════════════════════════════════════ -->
             <div class="tab-pane fade" id="tabPane-password" role="tabpanel">
@@ -628,6 +688,66 @@
             }
             packagesDisabledToggle.addEventListener('change', syncFreeRegState);
             syncFreeRegState();
+        }
+
+        // Handle packages disabled toggle affecting compensations
+        var compMaster = document.getElementById('commissionsEnabled');
+        var compTypes = document.querySelectorAll('.comp-type');
+        var compNotice = document.getElementById('compensationsPackagesDisabledNotice');
+        var compensationsForm = document.getElementById('compensationsForm');
+        if (packagesDisabledToggle && (compMaster || compTypes.length > 0)) {
+            function syncCompensationsState() {
+                var disabled = packagesDisabledToggle.checked;
+                if (compNotice) {
+                    compNotice.style.display = disabled ? '' : 'none';
+                }
+                if (compMaster) {
+                    compMaster.disabled = disabled;
+                    if (disabled) {
+                        compMaster.checked = false;
+                    }
+                    var masterHidden = document.getElementById('compMasterHidden');
+                    if (disabled) {
+                        if (!masterHidden && compensationsForm) {
+                            masterHidden = document.createElement('input');
+                            masterHidden.type = 'hidden';
+                            masterHidden.name = 'commissions_enabled';
+                            masterHidden.id = 'compMasterHidden';
+                            masterHidden.value = '0';
+                            compensationsForm.appendChild(masterHidden);
+                        } else if (masterHidden) {
+                            masterHidden.value = '0';
+                        }
+                    } else if (masterHidden) {
+                        masterHidden.remove();
+                    }
+                }
+                compTypes.forEach(function(cb) {
+                    cb.disabled = disabled;
+                    if (disabled) {
+                        cb.checked = false;
+                    }
+                    var h = document.getElementById('compTypeHidden_' + cb.name);
+                    if (disabled) {
+                        if (!h && compensationsForm) {
+                            h = document.createElement('input');
+                            h.type = 'hidden';
+                            h.name = cb.name;
+                            h.id = 'compTypeHidden_' + cb.name;
+                            h.value = '0';
+                            compensationsForm.appendChild(h);
+                        } else if (h) {
+                            h.value = '0';
+                        }
+                    } else if (h) {
+                        h.remove();
+                    }
+                });
+            }
+            if (packagesDisabledToggle) {
+                packagesDisabledToggle.addEventListener('change', syncCompensationsState);
+            }
+            syncCompensationsState();
         }
 
         // ── Business address: PSGC picker (same psgc.cloud fetch as profile) ──

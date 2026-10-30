@@ -996,8 +996,16 @@
   // Packages disabled (or none active) while free registration is on → there is
   // nothing to select, so the modal opens straight on Account Setup.
   $packagesDisabled = setting('packages_disabled', '0') === '1';
-  $skipSelectStep   = setting('free_registration_enabled', '1') === '1'
-      && ($packagesDisabled || empty($packages));
+  $rmFreeEnabled    = setting('free_registration_enabled', '1') === '1';
+  $skipSelectStep   = $rmFreeEnabled && ($packagesDisabled || empty($packages));
+  // Mirror the register page: free first, then a usable e-wallet, else a code.
+  $rmDefaultMethod  = $rmFreeEnabled ? 'free' : (($canUseEwallet ?? false) ? 'ewallet' : 'code');
+  // Free keeps the payment chooser (panel 1) but collapses the step bar.
+  $rmFreeMode       = !$skipSelectStep && $rmDefaultMethod === 'free';
+  $rmStepOneLabel   = $rmDefaultMethod === 'ewallet' ? 'Select Package' : 'Payment';
+  // Same gate as ?page=register: no placement controls when packages are
+  // disabled or the Binary Pairing compensation is switched off.
+  $rmBinaryUiEnabled = $binaryUiEnabled ?? binary_placement_ui_enabled($packages ?? []);
   ?>
   <script>
     let regCodeData = {},
@@ -1007,14 +1015,16 @@
       regSponsorOk = false;
     let regCurrentStep = 1;
     let regBinaryEnabled = true;
-    const PACKAGES = <?= json_encode(array_map(fn($p) => ['id' => $p['id'], 'name' => $p['name'], 'entry_fee' => fmt_money((float)$p['entry_fee']), 'pairing_bonus' => fmt_money((float)$p['pairing_bonus']), 'daily_pair_cap' => (int)$p['daily_pair_cap'], 'pairing_enabled' => (int)($p['pairing_enabled'] ?? 1) === 1], $binaryPackages ?? [])) ?>;
+    const PACKAGES = <?= json_encode(array_map(fn($p) => ['id' => $p['id'], 'name' => $p['name'], 'entry_fee' => fmt_money((float)$p['entry_fee']), 'pairing_bonus' => fmt_money((float)$p['pairing_bonus']), 'daily_pair_cap' => (int)$p['daily_pair_cap'], 'pairing_enabled' => (int)($p['pairing_enabled'] ?? 1) === 1], $packages ?? [])) ?>;
     const CSRF_TOKEN = '<?= csrf_token() ?>';
     const APP_URL_JS = '<?= APP_URL ?>';
     const IMP_QUERY = '<?= is_imp_session() ? '&imp=' . e(session_id()) : '' ?>';
     const CURRENT_USER = '<?= e($user["username"]) ?>';
     const REGISTRAR_HAS_BINARY = <?= $pairingEnabled ? 'true' : 'false' ?>;
-    const RM_FREE_ENABLED = <?= setting('free_registration_enabled', '1') === '1' ? 'true' : 'false' ?>;
+    const RM_FREE_ENABLED = <?= $rmFreeEnabled ? 'true' : 'false' ?>;
     const RM_SKIP_SELECT_STEP = <?= $skipSelectStep ? 'true' : 'false' ?>;
+    const RM_DEFAULT_METHOD = <?= json_encode($rmDefaultMethod) ?>;
+    const RM_BINARY_UI_ENABLED = <?= $rmBinaryUiEnabled ? 'true' : 'false' ?>;
     let rmBinaryMode = 'manual',
       rmAutoSuggestion = null,
       rmAutoActive = false,
@@ -1089,10 +1099,10 @@
       if (method === 'code') return !!(regCodeData && regCodeData.pairing_enabled);
       if (regSelectedPkg.pairing_enabled === true || regSelectedPkg.pairing_enabled === false) return regSelectedPkg.pairing_enabled;
       const single = document.getElementById('rm_packageId');
-      if (single) return single.dataset.pairing !== '0';
+      if (single) return single.dataset.pairing === '1';
       const sel = document.getElementById('rm_packageSelect');
       if (sel && sel.value) return sel.options[sel.selectedIndex].dataset.pairing === '1';
-      return true;
+      return false;
     }
 
     function rmRefreshAutoPreview() {
@@ -1124,6 +1134,13 @@
     function rmApplyBinary() {
       const sec = document.getElementById('rm_binarySection');
       if (!sec) return;
+      if (!RM_BINARY_UI_ENABLED) {
+        // Gate off: never show placement controls, and clear their required
+        // flags so a hidden radio cannot block submission.
+        sec.style.display = 'none';
+        rmSetBinaryEnabled(false);
+        return;
+      }
       const method = rmPaymentMethod();
       const pairing = rmCurrentPairing();
       const toggle = document.getElementById('rm_hasBinary');
@@ -1136,10 +1153,14 @@
       if (modeSec) modeSec.style.display = 'none';
 
       if (method === 'free') {
+        // Free access is limited: no binary placement at registration. The
+        // member chooses a binary connection when they activate.
+        rmAutoActive = false;
         if (toggle) {
-          toggle.disabled = false;
-          document.getElementById('rm_hasBinaryHint').textContent = 'Toggle ON to connect the member to the binary network now. Toggle OFF to defer the binary connection until the member activates.';
-          showAny = showManual = toggle.checked && REGISTRAR_HAS_BINARY;
+          toggle.checked = false;
+          toggle.disabled = true;
+          const hint = document.getElementById('rm_hasBinaryHint');
+          if (hint) hint.textContent = 'Free members are not placed in the binary network until they activate.';
         }
       } else if (pairing) {
         if (REGISTRAR_HAS_BINARY) {
@@ -1177,11 +1198,11 @@
       regUsernameOk = false;
       regSlotData = {};
       regCurrentStep = RM_SKIP_SELECT_STEP ? 2 : 1;
-      if (RM_FREE_ENABLED) {
-        document.getElementById('rm_referralMode').value = '1';
-      } else {
-        document.getElementById('rm_referralMode').value = '';
-      }
+      // Reset always returns to the default method (free → e-wallet → code).
+      const rmMethod = RM_DEFAULT_METHOD;
+      const rmMethodRadio = document.getElementById('rm_pay_' + rmMethod);
+      if (rmMethodRadio) rmMethodRadio.checked = true;
+      document.getElementById('rm_referralMode').value = rmMethod === 'free' ? '1' : '';
       document.getElementById('rm_upline_username').value = data.username || '';
       document.getElementById('rm_upline_display').textContent = '@' + (data.username || '—');
       document.getElementById('rm_sponsor_username').value = CURRENT_USER;
@@ -1189,15 +1210,23 @@
       document.getElementById('rm_sponsorInput').value = CURRENT_USER;
       regSponsorOk = true;
       regSetHint('rm_sponsorHint', 'Sponsor is valid.', true);
-      if (RM_FREE_ENABLED) {
+      if (rmMethod === 'free') {
         document.getElementById('rm_codeSection').style.display = 'none';
         document.getElementById('rm_packageSection').style.display = 'none';
         document.getElementById('rm_packageInfo').classList.add('d-none');
         document.getElementById('rm_validatedCode').value = '';
         document.getElementById('rm_reg_code').removeAttribute('required');
         document.getElementById('rm_toStep2Btn').disabled = false;
+      } else if (rmMethod === 'ewallet') {
+        // A usable e-wallet opens straight on the package picker.
+        document.getElementById('rm_codeSection').style.display = 'none';
+        document.getElementById('rm_packageSection').style.display = 'block';
+        document.getElementById('rm_packageInfo').classList.add('d-none');
+        document.getElementById('rm_validatedCode').value = '';
+        document.getElementById('rm_reg_code').removeAttribute('required');
+        document.getElementById('rm_toStep2Btn').disabled = PACKAGES.length !== 1;
       } else {
-        // Free registration is disabled → open in the paid (code) flow.
+        // Paid fallback: registration code.
         document.getElementById('rm_codeSection').style.display = 'block';
         document.getElementById('rm_packageSection').style.display = 'none';
         document.getElementById('rm_packageInfo').classList.add('d-none');
@@ -1236,15 +1265,47 @@
       new bootstrap.Modal(modal).show();
     }
 
+    function rmStepMode() {
+      if (RM_SKIP_SELECT_STEP) return 'skip';
+      return rmPaymentMethod() === 'free' ? 'free' : 'paid';
+    }
+
+    function rmPanelToIndicator(n) {
+      return (rmStepMode() === 'free' && n === 1) ? 2 : n;
+    }
+
+    function rmStepOneLabel() {
+      if (PACKAGES.length === 0) return 'Payment';
+      return rmPaymentMethod() === 'ewallet' ? 'Select Package' : 'Payment';
+    }
+
+    function rmSyncStepBar() {
+      const paid = rmStepMode() === 'paid';
+      const ind1 = document.getElementById('rm_ind_1');
+      if (ind1) ind1.style.display = paid ? '' : 'none';
+      const dot2 = document.getElementById('rm_ind_2_dot');
+      const dot3 = document.getElementById('rm_ind_3_dot');
+      if (dot2) dot2.textContent = paid ? '2' : '1';
+      if (dot3) dot3.textContent = paid ? '3' : '2';
+      const label1 = document.getElementById('rm_ind_1_label');
+      if (label1) label1.textContent = rmStepOneLabel();
+      const active = rmPanelToIndicator(regCurrentStep);
+      [1, 2, 3].forEach(i => {
+        const el = document.getElementById('rm_ind_' + i);
+        if (el) el.className = 'reg-step ' + (i < active ? 'done' : i === active ? 'active' : '');
+      });
+      const notice = document.getElementById('rm_freeLimitNotice');
+      if (notice) notice.style.display = (rmStepMode() === 'free') ? '' : 'none';
+    }
+
     function regGoStep(n) {
       regCurrentStep = n;
       const steps = RM_SKIP_SELECT_STEP ? [2, 3] : [1, 2, 3];
       steps.forEach(i => {
         const el = document.getElementById('rm_step' + i);
         if (el) el.style.display = i === n ? 'block' : 'none';
-        const ind = document.getElementById('rm_ind_' + i);
-        if (ind) ind.className = 'reg-step ' + (i < n ? 'done' : i === n ? 'active' : '');
       });
+      rmSyncStepBar();
     }
 
     function regSetHint(id, msg, ok) {
@@ -1302,6 +1363,7 @@
             document.getElementById('rm_toStep2Btn').disabled = true;
             codeInput.setAttribute('required', '');
           }
+          rmSyncStepBar();
           rmApplyBinary();
         });
       });
@@ -1583,18 +1645,17 @@
           <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
         </div>
         <div class="steps-bar" id="rm_stepsBar">
-          <?php if (!$skipSelectStep): ?>
-            <div class="reg-step active" id="rm_ind_1">
-              <div class="step-dot">1</div>
-              <div class="step-text">Select Package</div>
-            </div>
-          <?php endif; ?>
-          <div class="reg-step <?= $skipSelectStep ? 'active' : '' ?>" id="rm_ind_2">
-            <div class="step-dot"><?= $skipSelectStep ? '1' : '2' ?></div>
+          <div class="reg-step <?= (!$skipSelectStep && !$rmFreeMode) ? 'active' : '' ?>" id="rm_ind_1"
+            <?= ($skipSelectStep || $rmFreeMode) ? 'style="display:none;"' : '' ?>>
+            <div class="step-dot">1</div>
+            <div class="step-text" id="rm_ind_1_label"><?= e($rmStepOneLabel) ?></div>
+          </div>
+          <div class="reg-step <?= ($skipSelectStep || $rmFreeMode) ? 'active' : '' ?>" id="rm_ind_2">
+            <div class="step-dot" id="rm_ind_2_dot"><?= ($skipSelectStep || $rmFreeMode) ? '1' : '2' ?></div>
             <div class="step-text">Account Setup</div>
           </div>
           <div class="reg-step" id="rm_ind_3">
-            <div class="step-dot"><?= $skipSelectStep ? '2' : '3' ?></div>
+            <div class="step-dot" id="rm_ind_3_dot"><?= ($skipSelectStep || $rmFreeMode) ? '2' : '3' ?></div>
             <div class="step-text">Confirm</div>
           </div>
         </div>
@@ -1604,20 +1665,23 @@
           <input type="hidden" name="sponsor_username" id="rm_sponsor_username">
           <input type="hidden" name="upline_username" id="rm_upline_username">
           <input type="hidden" name="binary_position" id="rm_binary_position">
-          <input type="hidden" name="referral_mode" id="rm_referralMode" value="<?= $skipSelectStep ? '1' : '' ?>">
+          <input type="hidden" name="referral_mode" id="rm_referralMode" value="<?= ($skipSelectStep || $rmFreeMode) ? '1' : '' ?>">
 
           <!-- STEP 1 -->
           <div class="auth-body" id="rm_step1" <?= $skipSelectStep ? 'style="display:none;"' : '' ?>>
             <p class="text-muted mb-3" style="font-size:.85rem;">Choose payment method and package for the new member.</p>
             <div class="mb-3">
               <label class="form-label">Payment Method <span class="text-danger">*</span></label>
-              <div class="position-toggle" style="grid-template-columns:<?= setting('free_registration_enabled', '1') === '1' ? '1fr 1fr 1fr' : '1fr 1fr' ?>;">
-                <?php if (setting('free_registration_enabled', '1') === '1'): ?>
-                  <div class="position-option"><input type="radio" id="rm_pay_free" name="payment_method" value="free" checked required><label class="position-label" for="rm_pay_free">🎁 Free</label></div>
+              <div class="position-toggle" style="grid-template-columns:<?= $rmFreeEnabled ? '1fr 1fr 1fr' : '1fr 1fr' ?>;">
+                <?php if ($rmFreeEnabled): ?>
+                  <div class="position-option"><input type="radio" id="rm_pay_free" name="payment_method" value="free" <?= $rmDefaultMethod === 'free' ? 'checked' : '' ?> required><label class="position-label" for="rm_pay_free">🎁 Free</label></div>
                 <?php endif; ?>
-                <div class="position-option"><input type="radio" id="rm_pay_code" name="payment_method" value="code" <?= setting('free_registration_enabled', '1') === '1' ? '' : 'checked' ?>><label class="position-label" for="rm_pay_code">🎫 Code</label></div>
-                <div class="position-option"><input type="radio" id="rm_pay_ewallet" name="payment_method" value="ewallet"><label class="position-label" for="rm_pay_ewallet">💳 E-Wallet</label></div>
+                <div class="position-option"><input type="radio" id="rm_pay_code" name="payment_method" value="code" <?= $rmDefaultMethod === 'code' ? 'checked' : '' ?>><label class="position-label" for="rm_pay_code">🎫 Code</label></div>
+                <div class="position-option"><input type="radio" id="rm_pay_ewallet" name="payment_method" value="ewallet" <?= $rmDefaultMethod === 'ewallet' ? 'checked' : '' ?>><label class="position-label" for="rm_pay_ewallet">💳 E-Wallet</label></div>
               </div>
+            </div>
+            <div id="rm_freeLimitNotice" class="alert alert-info py-2 mb-3" style="font-size:.8rem;display:none;">
+              🎁 Free accounts are not placed in the binary network until the member activates.
             </div>
             <div id="rm_codeSection">
               <div class="mb-3">
@@ -1632,9 +1696,9 @@
             <div id="rm_packageSection" style="display:none;">
               <div class="mb-3">
                 <label class="form-label">Package <span class="text-danger">*</span></label>
-                <?php if (count($binaryPackages ?? []) === 1): ?>
-                  <?php $mp = ($binaryPackages ?? [])[0]; ?>
-                  <input type="hidden" name="package_id" id="rm_packageId" value="<?= (int)$mp['id'] ?>">
+                <?php if (count($packages ?? []) === 1): ?>
+                  <?php $mp = ($packages ?? [])[0]; ?>
+                  <input type="hidden" name="package_id" id="rm_packageId" value="<?= (int)$mp['id'] ?>" data-pairing="<?= (int)($mp['pairing_enabled'] ?? 1) === 1 ? '1' : '0' ?>">
                   <div class="card border-primary">
                     <div class="card-body">
                       <div class="fw-bold text-primary"><?= e($mp['name']) ?></div>
@@ -1645,7 +1709,7 @@
                 <?php else: ?>
                   <select class="form-select" id="rm_packageSelect" name="package_id">
                     <option value="">Select a package…</option>
-                    <?php foreach ($binaryPackages ?? [] as $pkg): ?>
+                    <?php foreach ($packages ?? [] as $pkg): ?>
                       <option value="<?= (int)$pkg['id'] ?>" data-name="<?= e($pkg['name']) ?>" data-fee="<?= fmt_money((float)$pkg['entry_fee']) ?>" data-bonus="<?= fmt_money((float)$pkg['pairing_bonus']) ?>" data-cap="<?= (int)$pkg['daily_pair_cap'] ?>" data-pairing="<?= (int)($pkg['pairing_enabled'] ?? 1) === 1 ? '1' : '0' ?>"><?= e($pkg['name']) ?> — <?= fmt_money((float)$pkg['entry_fee']) ?></option>
                     <?php endforeach; ?>
                   </select>
@@ -1666,8 +1730,9 @@
               </div>
             </div>
 
+            <?php if ($rmBinaryUiEnabled): ?>
             <div id="rm_binarySection">
-              <?php if ($pairingEnabled && setting('free_registration_enabled', '1') === '1'): ?>
+              <?php if ($pairingEnabled && $rmFreeEnabled): ?>
                 <div class="mb-3">
                   <label class="form-label">Binary Placement</label>
                   <div class="form-check form-switch">
@@ -1676,8 +1741,6 @@
                   </div>
                   <div class="form-text" id="rm_hasBinaryHint">Toggle ON to connect the member to the binary network now. Toggle OFF to defer the binary connection until the member activates.</div>
                 </div>
-              <?php else: ?>
-                <input type="hidden" name="has_binary" value="1">
               <?php endif; ?>
               <div id="rm_binaryModeSection" style="display:none;" class="mb-3">
                 <label class="form-label">Binary Connection</label>
@@ -1704,6 +1767,7 @@
                 </div>
               </div>
             </div>
+            <?php endif; ?>
 
             <button type="button" class="btn btn-primary w-100 btn-lg" id="rm_toStep2Btn" disabled>Continue →</button>
           </div>
@@ -1777,6 +1841,7 @@
                     <td>Sponsor</td>
                     <td id="rm_rev_sponsor">—</td>
                   </tr>
+                  <?php if ($rmBinaryUiEnabled): ?>
                   <tr id="rm_rev_uplineRow">
                     <td>Upline</td>
                     <td id="rm_rev_upline">—</td>
@@ -1785,10 +1850,13 @@
                     <td>Position</td>
                     <td id="rm_rev_position">—</td>
                   </tr>
+                  <?php endif; ?>
                 </table>
               </div>
             </div>
+            <?php if ($rmBinaryUiEnabled): ?>
             <div class="alert alert-warning py-2 mb-3" style="font-size:.8rem;">⚠️ Binary position cannot be changed after registration.</div>
+            <?php endif; ?>
             <div class="d-flex gap-2">
               <button type="button" class="btn btn-outline-secondary" onclick="regGoStep(2)">← Back</button>
               <button type="submit" class="btn btn-primary flex-grow-1 btn-lg" id="rm_submitBtn">✓ Complete Registration</button>

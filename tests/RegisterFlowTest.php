@@ -73,11 +73,14 @@ test('packages disabled → Account Setup is the first step', function (): void 
     $html = $result['html'];
 
     T::ok($result['problems'] === [], 'skip: renders without PHP diagnostics', implode(' | ', $result['problems']));
-    T::ok(!str_contains($html, 'Select Package'), 'skip: the Select Package step is gone');
+    T::ok(
+        preg_match('/id="step-ind-1"\s+style="display:none;"/s', $html) === 1,
+        'skip: the Select Package indicator is hidden'
+    );
     T::ok(str_contains($html, 'Account Setup'), 'skip: Account Setup is rendered');
     T::ok(str_contains($html, 'const SKIP_SELECT_STEP = true;'), 'skip: JS knows the flow is two-step');
     T::ok(
-        str_contains($html, 'new accounts start on the free (pending) plan'),
+        str_contains($html, 'new accounts start on the free (active) plan'),
         'skip: the page explains why there is no package step'
     );
     T::ok(
@@ -86,7 +89,32 @@ test('packages disabled → Account Setup is the first step', function (): void 
     );
 });
 
-test('packages available → Select Package is still rendered', function (): void {
+test('packages available + Code → step 1 is visible and labelled Payment', function (): void {
+    $result = render_register_view([
+        'packages'             => [['id' => 1, 'name' => 'Starter', 'entry_fee' => 500.00, 'pairing_bonus' => 100.00,
+                                    'daily_pair_cap' => 3, 'pairing_enabled' => 1]],
+        'packagesDisabled'     => false,
+        'skipSelectStep'       => false,
+        'isReferralMode'       => false,
+        'degradedReferral'     => false,
+        'canUseEwallet'        => false,
+        'defaultPaymentMethod' => 'code',
+        'prefillSponsor'       => '',
+        'prefillUpline'        => '',
+        'prefillPosition'      => 'left',
+    ]);
+    $html = $result['html'];
+
+    T::ok($result['problems'] === [], 'code: renders without PHP diagnostics', implode(' | ', $result['problems']));
+    T::ok(
+        preg_match('/id="step-ind-1"\s+style="display:none;"/s', $html) !== 1,
+        'code: step 1 is visible'
+    );
+    T::ok(str_contains($html, 'id="step-ind-1-label">Payment</div>'), 'code: the step-1 label is Payment');
+    T::ok(str_contains($html, 'const SKIP_SELECT_STEP = false;'), 'code: JS keeps the three-step flow');
+});
+
+test('packages available + Free → Free is the default and the bar collapses', function (): void {
     $result = render_register_view([
         'packages'         => [['id' => 1, 'name' => 'Starter', 'entry_fee' => 500.00, 'pairing_bonus' => 100.00,
                                 'daily_pair_cap' => 3, 'pairing_enabled' => 1]],
@@ -101,9 +129,109 @@ test('packages available → Select Package is still rendered', function (): voi
     ]);
     $html = $result['html'];
 
-    T::ok($result['problems'] === [], 'normal: renders without PHP diagnostics', implode(' | ', $result['problems']));
-    T::ok(str_contains($html, 'Select Package'), 'normal: the Select Package step is present');
-    T::ok(str_contains($html, 'const SKIP_SELECT_STEP = false;'), 'normal: JS keeps the three-step flow');
+    T::ok($result['problems'] === [], 'free: renders without PHP diagnostics', implode(' | ', $result['problems']));
+    T::ok(str_contains($html, 'const DEFAULT_PAYMENT_METHOD = "free";'), 'free: Free is the default method');
+    T::ok(
+        preg_match('/id="step-ind-1"\s+style="display:none;"/s', $html) === 1,
+        'free: the Select Package indicator is hidden'
+    );
+    T::ok(str_contains($html, 'id="freeLimitNotice"'), 'free: the limited-access notice is rendered');
+    T::ok(
+        preg_match('/id="pay_free" name="payment_method" value="free" checked/', $html) === 1,
+        'free: the Free radio is checked'
+    );
+});
+
+T::group('Registration binary placement visibility');
+
+test('packages disabled → no binary placement controls are rendered', function (): void {
+    $result = render_register_view([
+        'packages'         => [],
+        'packagesDisabled' => true,
+        'skipSelectStep'   => true,
+        'isReferralMode'   => false,
+        'degradedReferral' => false,
+        'canUseEwallet'    => false,
+        'prefillSponsor'   => '',
+        'prefillUpline'    => '',
+        'prefillPosition'  => 'left',
+    ]);
+    $html = $result['html'];
+
+    T::ok($result['problems'] === [], 'disabled: renders without PHP diagnostics', implode(' | ', $result['problems']));
+    T::ok(!str_contains($html, 'name="upline_username"'), 'disabled: no Binary Upline Username field');
+    T::ok(!str_contains($html, 'name="binary_position"'), 'disabled: no Binary Position radios');
+    T::ok(!str_contains($html, 'name="has_binary"'), 'disabled: no Binary Placement toggle');
+    T::ok(!str_contains($html, 'id="binarySection"'), 'disabled: no binary section at all');
+    T::ok(str_contains($html, 'const BINARY_UI_ENABLED = false;'), 'disabled: JS knows placement UI is off');
+});
+
+test('Binary Pairing off in Compensations → no binary placement controls', function (): void {
+    db()->prepare(
+        "INSERT INTO settings (key_name, value) VALUES ('commission_binary_enabled', '0')
+         ON DUPLICATE KEY UPDATE value = VALUES(value)"
+    )->execute();
+    setting_forget('commission_binary_enabled');
+
+    $result = render_register_view([
+        'packages'         => [['id' => 1, 'name' => 'Starter', 'entry_fee' => 500.00, 'pairing_bonus' => 100.00,
+                                'daily_pair_cap' => 3, 'pairing_enabled' => 1]],
+        'packagesDisabled' => false,
+        'skipSelectStep'   => false,
+        'isReferralMode'   => false,
+        'degradedReferral' => false,
+        'canUseEwallet'    => false,
+        'prefillSponsor'   => '',
+        'prefillUpline'    => '',
+        'prefillPosition'  => 'left',
+    ]);
+    $html = $result['html'];
+
+    T::ok($result['problems'] === [], 'pairing off: renders without PHP diagnostics', implode(' | ', $result['problems']));
+    T::ok(!str_contains($html, 'name="upline_username"'), 'pairing off: no Binary Upline Username field');
+    T::ok(!str_contains($html, 'name="binary_position"'), 'pairing off: no Binary Position radios');
+    T::ok(str_contains($html, 'const BINARY_UI_ENABLED = false;'), 'pairing off: JS knows placement UI is off');
+
+    db()->prepare(
+        "INSERT INTO settings (key_name, value) VALUES ('commission_binary_enabled', '1')
+         ON DUPLICATE KEY UPDATE value = VALUES(value)"
+    )->execute();
+    setting_forget('commission_binary_enabled');
+});
+
+test('packages available + Binary Pairing on → placement controls stay', function (): void {
+    $result = render_register_view([
+        'packages'         => [['id' => 1, 'name' => 'Starter', 'entry_fee' => 500.00, 'pairing_bonus' => 100.00,
+                                'daily_pair_cap' => 3, 'pairing_enabled' => 1]],
+        'packagesDisabled' => false,
+        'skipSelectStep'   => false,
+        'isReferralMode'   => false,
+        'degradedReferral' => false,
+        'canUseEwallet'    => false,
+        'prefillSponsor'   => '',
+        'prefillUpline'    => '',
+        'prefillPosition'  => 'left',
+    ]);
+    $html = $result['html'];
+
+    T::ok($result['problems'] === [], 'enabled: renders without PHP diagnostics', implode(' | ', $result['problems']));
+    T::ok(str_contains($html, 'name="upline_username"'), 'enabled: Binary Upline Username field is rendered');
+    T::ok(str_contains($html, 'name="binary_position"'), 'enabled: Binary Position radios are rendered');
+    T::ok(str_contains($html, 'const BINARY_UI_ENABLED = true;'), 'enabled: JS knows placement UI is on');
+});
+
+T::group('Registration placement rule');
+
+test('placementRequired accepts only real referral links and paid pairing packages', function (): void {
+    // placementRequired($uiEnabled, $referralMode, $forceReferralAnchor, $hasUpline, $packageId, $pairing)
+    T::eq(false, AuthController::placementRequired(false, true, true, true, 0, false), 'gate off: never required');
+    T::eq(false, AuthController::placementRequired(true, true, false, true, 0, false), 'free page: forged upline is ignored');
+    T::eq(true, AuthController::placementRequired(true, true, true, true, 0, false), 'referral link: anchored with an upline');
+    T::eq(false, AuthController::placementRequired(true, true, true, false, 0, false), 'referral link: no upline, no placement');
+    T::eq(true, AuthController::placementRequired(true, false, false, false, 7, true), 'paid pairing: auto-select may place');
+    T::eq(false, AuthController::placementRequired(true, false, false, false, 7, false), 'paid non-pairing: no placement');
+    T::eq(false, AuthController::placementRequired(true, false, false, true, 0, true), 'paid without a package: no placement');
+    T::eq(true, AuthController::placementRequired(true, false, true, true, 7, true), 'paid pairing with ref marker: still placed');
 });
 
 exit(T::summary());

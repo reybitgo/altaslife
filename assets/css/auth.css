@@ -171,10 +171,10 @@
   display: none;
 }
 .reg-step.done::before {
-  background: var(--auth-800);
+  background: var(--auth-800, #12362a);
 }
 .reg-step.active::before {
-  background: linear-gradient(90deg, var(--auth-800), #d1d5db);
+  background: linear-gradient(90deg, var(--auth-800, #12362a), #d1d5db);
 }
 .step-dot {
   width: 28px;
@@ -199,9 +199,9 @@
   border-color: #9ca3af;
 }
 .reg-step.active .step-dot {
-  background: var(--auth-800);
-  color: #4b5563;
-  border-color: var(--auth-800);
+  background: var(--auth-800, #12362a);
+  color: #fff;
+  border-color: var(--auth-800, #12362a);
   box-shadow: 0 0 0 4px rgba(201, 163, 92, 0.28);
 }
 .step-text {
@@ -211,7 +211,7 @@
   white-space: nowrap;
 }
 .reg-step.active .step-text {
-  color: var(--auth-800);
+  color: var(--auth-800, #12362a);
 }
 .reg-step.done .step-text {
   color: #4b5563;

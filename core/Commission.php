@@ -6,6 +6,23 @@
  */
 class Commission
 {
+    private static function isCompEnabled(string $type): bool
+    {
+        if (function_exists('setting') && setting('commissions_enabled', '1') !== '1') {
+            return false;
+        }
+        switch ($type) {
+            case 'direct':
+                return !function_exists('setting') || setting('commission_direct_ref_enabled', '1') === '1';
+            case 'indirect':
+                return !function_exists('setting') || setting('commission_indirect_ref_enabled', '1') === '1';
+            case 'binary':
+                return !function_exists('setting') || setting('commission_binary_enabled', '1') === '1';
+            default:
+                return true;
+        }
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     //  BINARY PLACEMENT ENGINE
     //  Called immediately after a new member is inserted.
@@ -142,29 +159,33 @@ class Commission
                     $payNow   = min($newSettle, max(0, $capRemaining));
                     $flushNow = $newSettle - $payNow;
 
-                    // Credit the matched volume immediately — v3: cap-aware pesos
-                    if ($payNow > 0) {
-                        self::creditPairing($cur, $payNow, 1, $newUserId);
-                    }
+                    if (self::isCompEnabled('binary')) {
+                        // Credit the matched volume immediately — v3: cap-aware pesos
+                        if ($payNow > 0) {
+                            self::creditPairing($cur, $payNow, 1, $newUserId);
+                        }
 
-                    // Record flushed volume (money permanently lost)
-                    if ($flushNow > 0) {
-                        self::recordFlush($cur, $flushNow, $newUserId);
+                        // Record flushed volume (money permanently lost)
+                        if ($flushNow > 0) {
+                            self::recordFlush($cur, $flushNow, $newUserId);
+                        }
                     }
 
                     // Update volume counters in one atomic statement
-                    $pdo->prepare("
-                        UPDATE users
-                        SET pairs_volume_paid    = pairs_volume_paid    + :pay,
-                            pairs_volume_flushed = pairs_volume_flushed + :flush,
-                            pairs_volume_today   = pairs_volume_today   + :pay2
-                        WHERE id = :id
-                    ")->execute([
-                        ':pay'   => $payNow,
-                        ':flush' => $flushNow,
-                        ':pay2'  => $payNow,
-                        ':id'    => $cur,
-                    ]);
+                    if (self::isCompEnabled('binary')) {
+                        $pdo->prepare("
+                            UPDATE users
+                            SET pairs_volume_paid    = pairs_volume_paid    + :pay,
+                                pairs_volume_flushed = pairs_volume_flushed + :flush,
+                                pairs_volume_today   = pairs_volume_today   + :pay2
+                            WHERE id = :id
+                        ")->execute([
+                            ':pay'   => $payNow,
+                            ':flush' => $flushNow,
+                            ':pay2'  => $payNow,
+                            ':id'    => $cur,
+                        ]);
+                    }
                 }
             }
 
@@ -192,6 +213,9 @@ class Commission
         int $newUserId,
         int $packageId
     ): void {
+        if (!self::isCompEnabled('direct')) {
+            return;
+        }
         $pdo = db();
         // Standard accounts earn nothing
         $sponsorPm = $pdo->query("SELECT reg_payment_method FROM users WHERE id = {$sponsorId}")->fetchColumn();
@@ -301,6 +325,9 @@ class Commission
         int $newUserId,
         int $packageId
     ): void {
+        if (!self::isCompEnabled('indirect')) {
+            return;
+        }
         $pdo = db();
         $newPm = $pdo->query("SELECT reg_payment_method FROM users WHERE id = {$newUserId}")->fetchColumn();
         if ($newPm === 'standard') {

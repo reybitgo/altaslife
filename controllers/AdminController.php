@@ -571,6 +571,13 @@ class AdminController
                 'usdt_trc20_gas_fee',
                 'usdt_bep20_gas_fee',
             ],
+            'compensations' => [
+                'commissions_enabled',
+                'commission_direct_ref_enabled',
+                'commission_indirect_ref_enabled',
+                'commission_binary_enabled',
+                'commission_dfi_enabled',
+            ],
             'reset' => [
                 'default_cap_multiplier',
             ],
@@ -600,7 +607,7 @@ class AdminController
             redirect('/?page=admin_settings');
         }
 
-        $checkboxKeys = ['gcash_enabled', 'maya_enabled', 'reactivation_ewallet_enabled', 'reactivation_external_enabled', 'shop_enabled', 'packages_disabled'];
+        $checkboxKeys = ['gcash_enabled', 'maya_enabled', 'reactivation_ewallet_enabled', 'reactivation_external_enabled', 'shop_enabled', 'packages_disabled', 'commissions_enabled', 'commission_direct_ref_enabled', 'commission_indirect_ref_enabled', 'commission_binary_enabled', 'commission_dfi_enabled'];
         $hourKeys     = ['shop_payment_deadline_hours', 'shop_correction_window_hours', 'shop_max_proof_attempts', 'shop_report_window_days', 'shop_max_delivery_attempts'];
 
         $pdo = db();
@@ -633,6 +640,13 @@ class AdminController
                 $st2->execute();
                 // Make all packages inactive
                 $pdo->exec("UPDATE packages SET status = 'inactive'");
+                // Disable all commissions while packages are disabled
+                $compKeys = ['commissions_enabled', 'commission_direct_ref_enabled', 'commission_indirect_ref_enabled', 'commission_binary_enabled', 'commission_dfi_enabled'];
+                $stComp = $pdo->prepare("INSERT INTO settings (key_name, value) VALUES (?, '0') ON DUPLICATE KEY UPDATE value = '0'");
+                foreach ($compKeys as $ck) {
+                    $stComp->execute([$ck]);
+                    setting_forget($ck);
+                }
                 setting_forget('free_registration_enabled');
                 setting_forget('packages_disabled');
             } else {

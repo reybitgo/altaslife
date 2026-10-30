@@ -1966,6 +1966,11 @@ $schemaLogo = $base . '/frontend/og-image.svg';
         animation: 30s linear infinite fly;
       }
 
+      /* Chickens roaming the field in the hero scene (motion comes from the script at the end of the page) */
+      .chicken {
+        pointer-events: none;
+      }
+
       .marquee {
         border-block: 1px solid var(--line);
         background: var(--paper);
@@ -4536,6 +4541,105 @@ $schemaLogo = $base . '/frontend/og-image.svg';
                     </g>
                   </g>
 
+                  <!-- Chickens: free-roaming flock (see script at the end of the page) -->
+                  <g class="layer" data-depth=".5">
+                    <g class="chickens">
+                      <g class="chicken hen" data-x="146" data-y="492" data-dir="1" transform="translate(146 492) scale(0.824 0.824)">
+                        <ellipse cx="3" cy=".6" rx="15" ry="2.4" fill="#44663f" opacity=".28" />
+                        <g class="leg-a" stroke="#d29a3f" stroke-width="1.8" stroke-linecap="round" fill="none"><path d="M0 -7V-.4M-3.2 0H1.6" /></g>
+                        <g class="leg-b" stroke="#d29a3f" stroke-width="1.8" stroke-linecap="round" fill="none"><path d="M6 -7V-.4M2.8 0H7.6" /></g>
+                        <g class="hen-body">
+                          <path d="M-10 -18C-17 -19-21 -28-17 -34C-14 -29-10 -26-5 -24Z" fill="#7a4426" />
+                          <path d="M-13 -17C-13 -9-6 -5 3 -5C11 -5 16 -10 15 -17C14 -23 8 -26 1 -25C-6 -24-13 -23-13 -17Z" fill="#bf7a47" />
+                          <path d="M-7 -18C-5 -11 4 -9 9 -14C6 -21-3 -22-7 -18Z" fill="#9c5a30" />
+                          <g class="hen-neck">
+                            <path d="M9 -18C10.5 -23 11.8 -26.5 12.5 -29.5" stroke="#bf7a47" stroke-width="7" stroke-linecap="round" fill="none" />
+                            <circle cx="13.2" cy="-32" r="4.8" fill="#bf7a47" />
+                            <path d="M10.8 -35.6C10.6 -39.6 13.2 -40.2 13.6 -37.8C14.5 -40.8 17.4 -39.6 15.8 -36.4Z" fill="#c8553d" />
+                            <path d="M17.6 -33.2L22.8 -31.6L17.7 -30.2Z" fill="#e0a73c" />
+                            <circle cx="17" cy="-28.4" r="1.7" fill="#c8553d" />
+                            <circle cx="15" cy="-32.9" r="1" fill="#223028" />
+                          </g>
+                        </g>
+                      </g>
+                      <g class="chicken hen" data-x="456" data-y="497" data-dir="-1" transform="translate(456 497) scale(-0.835 0.835)">
+                        <ellipse cx="3" cy=".6" rx="15" ry="2.4" fill="#44663f" opacity=".28" />
+                        <g class="leg-a" stroke="#d29a3f" stroke-width="1.8" stroke-linecap="round" fill="none"><path d="M0 -7V-.4M-3.2 0H1.6" /></g>
+                        <g class="leg-b" stroke="#d29a3f" stroke-width="1.8" stroke-linecap="round" fill="none"><path d="M6 -7V-.4M2.8 0H7.6" /></g>
+                        <g class="hen-body">
+                          <path d="M-10 -18C-17 -19-21 -28-17 -34C-14 -29-10 -26-5 -24Z" fill="#cbbf9a" />
+                          <path d="M-13 -17C-13 -9-6 -5 3 -5C11 -5 16 -10 15 -17C14 -23 8 -26 1 -25C-6 -24-13 -23-13 -17Z" fill="#f7f2e0" />
+                          <path d="M-7 -18C-5 -11 4 -9 9 -14C6 -21-3 -22-7 -18Z" fill="#e2d8b8" />
+                          <g class="hen-neck">
+                            <path d="M9 -18C10.5 -23 11.8 -26.5 12.5 -29.5" stroke="#f7f2e0" stroke-width="7" stroke-linecap="round" fill="none" />
+                            <circle cx="13.2" cy="-32" r="4.8" fill="#f7f2e0" />
+                            <path d="M10.8 -35.6C10.6 -39.6 13.2 -40.2 13.6 -37.8C14.5 -40.8 17.4 -39.6 15.8 -36.4Z" fill="#c8553d" />
+                            <path d="M17.6 -33.2L22.8 -31.6L17.7 -30.2Z" fill="#e0a73c" />
+                            <circle cx="17" cy="-28.4" r="1.7" fill="#c8553d" />
+                            <circle cx="15" cy="-32.9" r="1" fill="#223028" />
+                          </g>
+                        </g>
+                      </g>
+                      <g class="chicken chick" data-x="196" data-y="498" data-dir="1" transform="translate(196 498) scale(1.054 1.054)">
+                        <ellipse cx="2" cy=".5" rx="9" ry="1.8" fill="#44663f" opacity=".28" />
+                        <g class="leg-a" stroke="#d98f2f" stroke-width="1.4" stroke-linecap="round" fill="none"><path d="M-1.5 -3.6V-.3M-3.4 0H-.2" /></g>
+                        <g class="leg-b" stroke="#d98f2f" stroke-width="1.4" stroke-linecap="round" fill="none"><path d="M2.5 -3.6V-.3M.6 0H3.8" /></g>
+                        <g class="chick-body"><g transform="translate(0 -1.6)">
+                          <path d="M-5.5 -11.5C-8 -12-10 -14-9.5 -16C-7 -14.8-5 -14-3.5 -13.5Z" fill="#e4b94b" />
+                          <circle cx="0" cy="-8" r="7" fill="#f3d56f" />
+                          <path d="M-4 -9C-2 -5 3 -4.5 5 -7.5C2.5 -11-2 -11.5-4 -9Z" fill="#e4b94b" />
+                          <circle cx="7" cy="-14" r="4.6" fill="#f3d56f" />
+                          <path d="M11.2 -14.8L15 -13.6L11.3 -12.6Z" fill="#e08f2f" />
+                          <circle cx="8.7" cy="-14.8" r=".85" fill="#223028" />
+                        </g></g>
+                      </g>
+                      <g class="chicken hen" data-x="84" data-y="500" data-dir="1" transform="translate(84 500) scale(0.841 0.841)">
+                        <ellipse cx="3" cy=".6" rx="15" ry="2.4" fill="#44663f" opacity=".28" />
+                        <g class="leg-a" stroke="#d29a3f" stroke-width="1.8" stroke-linecap="round" fill="none"><path d="M0 -7V-.4M-3.2 0H1.6" /></g>
+                        <g class="leg-b" stroke="#d29a3f" stroke-width="1.8" stroke-linecap="round" fill="none"><path d="M6 -7V-.4M2.8 0H7.6" /></g>
+                        <g class="hen-body">
+                          <path d="M-10 -18C-17 -19-21 -28-17 -34C-14 -29-10 -26-5 -24Z" fill="#4d3926" />
+                          <path d="M-13 -17C-13 -9-6 -5 3 -5C11 -5 16 -10 15 -17C14 -23 8 -26 1 -25C-6 -24-13 -23-13 -17Z" fill="#9a7b5c" />
+                          <path d="M-7 -18C-5 -11 4 -9 9 -14C6 -21-3 -22-7 -18Z" fill="#76583d" />
+                          <g class="hen-neck">
+                            <path d="M9 -18C10.5 -23 11.8 -26.5 12.5 -29.5" stroke="#9a7b5c" stroke-width="7" stroke-linecap="round" fill="none" />
+                            <circle cx="13.2" cy="-32" r="4.8" fill="#9a7b5c" />
+                            <path d="M10.8 -35.6C10.6 -39.6 13.2 -40.2 13.6 -37.8C14.5 -40.8 17.4 -39.6 15.8 -36.4Z" fill="#c8553d" />
+                            <path d="M17.6 -33.2L22.8 -31.6L17.7 -30.2Z" fill="#e0a73c" />
+                            <circle cx="17" cy="-28.4" r="1.7" fill="#c8553d" />
+                            <circle cx="15" cy="-32.9" r="1" fill="#223028" />
+                          </g>
+                        </g>
+                      </g>
+                      <g class="chicken chick" data-x="503" data-y="503" data-dir="-1" transform="translate(503 503) scale(-1.067 1.067)">
+                        <ellipse cx="2" cy=".5" rx="9" ry="1.8" fill="#44663f" opacity=".28" />
+                        <g class="leg-a" stroke="#d98f2f" stroke-width="1.4" stroke-linecap="round" fill="none"><path d="M-1.5 -3.6V-.3M-3.4 0H-.2" /></g>
+                        <g class="leg-b" stroke="#d98f2f" stroke-width="1.4" stroke-linecap="round" fill="none"><path d="M2.5 -3.6V-.3M.6 0H3.8" /></g>
+                        <g class="chick-body"><g transform="translate(0 -1.6)">
+                          <path d="M-5.5 -11.5C-8 -12-10 -14-9.5 -16C-7 -14.8-5 -14-3.5 -13.5Z" fill="#e4b94b" />
+                          <circle cx="0" cy="-8" r="7" fill="#f3d56f" />
+                          <path d="M-4 -9C-2 -5 3 -4.5 5 -7.5C2.5 -11-2 -11.5-4 -9Z" fill="#e4b94b" />
+                          <circle cx="7" cy="-14" r="4.6" fill="#f3d56f" />
+                          <path d="M11.2 -14.8L15 -13.6L11.3 -12.6Z" fill="#e08f2f" />
+                          <circle cx="8.7" cy="-14.8" r=".85" fill="#223028" />
+                        </g></g>
+                      </g>
+                      <g class="chicken chick" data-x="404" data-y="506" data-dir="-1" transform="translate(404 506) scale(-1.075 1.075)">
+                        <ellipse cx="2" cy=".5" rx="9" ry="1.8" fill="#44663f" opacity=".28" />
+                        <g class="leg-a" stroke="#d98f2f" stroke-width="1.4" stroke-linecap="round" fill="none"><path d="M-1.5 -3.6V-.3M-3.4 0H-.2" /></g>
+                        <g class="leg-b" stroke="#d98f2f" stroke-width="1.4" stroke-linecap="round" fill="none"><path d="M2.5 -3.6V-.3M.6 0H3.8" /></g>
+                        <g class="chick-body"><g transform="translate(0 -1.6)">
+                          <path d="M-5.5 -11.5C-8 -12-10 -14-9.5 -16C-7 -14.8-5 -14-3.5 -13.5Z" fill="#e8cb70" />
+                          <circle cx="0" cy="-8" r="7" fill="#f6e39a" />
+                          <path d="M-4 -9C-2 -5 3 -4.5 5 -7.5C2.5 -11-2 -11.5-4 -9Z" fill="#e8cb70" />
+                          <circle cx="7" cy="-14" r="4.6" fill="#f6e39a" />
+                          <path d="M11.2 -14.8L15 -13.6L11.3 -12.6Z" fill="#e08f2f" />
+                          <circle cx="8.7" cy="-14.8" r=".85" fill="#223028" />
+                        </g></g>
+                      </g>
+                    </g>
+                  </g>
+
                   <g class="layer" data-depth=".85">
                     <g class="sprout">
                       <path
@@ -6650,6 +6754,165 @@ $schemaLogo = $base . '/frontend/og-image.svg';
         }
 
         useAltasMotion();
+      })();
+    </script>
+
+    <script>
+      /* Free-roaming chickens in the hero scene.
+         They wander the field, stop to peck, and now and then walk off one edge of
+         the card and wander back in from the opposite edge. They stay still when the
+         visitor prefers reduced motion. */
+      (() => {
+        const root = document.querySelector(".chickens");
+        const visual = document.getElementById("hero-visual");
+        if (!root || !visual) return;
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+        const TAU = Math.PI * 2;
+        const Y0 = 490, Y1 = 634; // walkable band of the field (scene units)
+        const XL = -50, XR = 650; // just outside the card's left / right edge
+        const rnd = (a, b) => a + Math.random() * (b - a);
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+        const randY = () => Y0 + (Y1 - Y0) * Math.pow(Math.random(), 1.35);
+        const scaleOf = (b) => b.base * (0.82 + 0.3 * clamp((b.y - Y0) / (Y1 - Y0), 0, 1));
+        const rot = (a, pivot) => `rotate(${a.toFixed(1)} ${pivot})`;
+
+        // pivots (local coordinates) and motion ranges for each kind of bird
+        const KIND = {
+          hen: { legA: "0 -7", legB: "6 -7", body: "2 -9", neck: "11 -21", swing: 26, tilt: 40, nod: 45, bob: 0.9, stride: 14, peckHz: 3 },
+          chick: { legA: "-1.5 -3.6", legB: "2.5 -3.6", body: "3 -3.6", swing: 36, tilt: 50, bob: 1.1, stride: 8, peckHz: 3.8 }
+        };
+
+        const flock = [...root.querySelectorAll(".chicken")].map((el) => {
+          const hen = el.classList.contains("hen");
+          return {
+            el, hen, k: hen ? KIND.hen : KIND.chick, base: hen ? 1 : 1.26,
+            body: el.querySelector(".hen-body, .chick-body"),
+            neck: el.querySelector(".hen-neck"),
+            legA: el.querySelector(".leg-a"),
+            legB: el.querySelector(".leg-b"),
+            x: parseFloat(el.dataset.x), y: parseFloat(el.dataset.y), dir: parseFloat(el.dataset.dir) || 1,
+            state: "idle", t: 0, dur: rnd(0.2, 1.8),
+            tx: 0, ty: 0, speed: 0, side: 0, leaving: false,
+            walk: 0, peck: 0, gate: 0, pt: rnd(0, 5), step: rnd(0, TAU)
+          };
+        });
+
+        const startWalk = (b, tx, ty, speed) => {
+          b.state = "walk"; b.tx = tx; b.ty = ty; b.speed = speed;
+          b.dir = tx >= b.x ? 1 : -1;
+        };
+        const speedOf = (b) => (b.hen ? rnd(24, 38) : rnd(34, 54));
+
+        const wander = (b) => {
+          let tx = b.x + rnd(50, 230) * (Math.random() < 0.5 ? -1 : 1);
+          if (tx < 28 || tx > 572) tx = 2 * b.x - tx; // bounce back inside the card
+          const ty = Math.random() < 0.3 ? randY() : clamp(b.y + rnd(-24, 24), Y0, Y1);
+          startWalk(b, clamp(tx, 28, 572), ty, speedOf(b));
+        };
+
+        // walk out through the left or right edge, then come back in on the other side
+        const leave = (b) => {
+          b.side = Math.random() < 0.5 ? -1 : 1;
+          b.leaving = true;
+          startWalk(b, b.side < 0 ? XL - 10 : XR + 10, clamp(b.y + rnd(-14, 14), Y0, Y1), speedOf(b) * 1.1);
+        };
+
+        const reenter = (b) => {
+          b.x = b.side < 0 ? XR : XL; // left via the left edge -> reappears at the right edge
+          b.y = randY();
+          b.el.style.display = "";
+          startWalk(b, b.side < 0 ? rnd(380, 540) : rnd(60, 220), clamp(b.y + rnd(-18, 18), Y0, Y1), speedOf(b));
+          b.t = 0;
+          draw(b);
+        };
+
+        const decide = (b, afterWalk) => {
+          const r = Math.random();
+          const peck = () => { b.state = "peck"; b.dur = b.hen ? rnd(1.6, 4.4) : rnd(1.0, 3.2); };
+          const idle = () => { b.state = "idle"; b.dur = rnd(0.4, 1.6); };
+          if (afterWalk) {
+            if (r < 0.68) peck(); else if (r < 0.84) idle(); else wander(b);
+          } else if (r < 0.55) {
+            Math.random() < 0.12 ? leave(b) : wander(b);
+          } else if (r < 0.88) peck(); else idle();
+          b.t = 0;
+        };
+
+        const update = (b, dt) => {
+          if (b.state === "away") {
+            b.t += dt;
+            if (b.t >= b.dur) reenter(b);
+            return;
+          }
+          b.t += dt;
+          let walking = 0, pecking = 0;
+          if (b.state === "walk") {
+            const dx = b.tx - b.x, dy = b.ty - b.y, d = Math.hypot(dx, dy), len = b.speed * dt;
+            if (d <= len + 0.5) {
+              b.x = b.tx; b.y = b.ty;
+              if (b.leaving) {
+                b.leaving = false; b.state = "away"; b.t = 0; b.dur = rnd(1.5, 6);
+                b.el.style.display = "none";
+                return;
+              }
+              decide(b, true);
+            } else {
+              b.x += (dx / d) * len; b.y += (dy / d) * len;
+              if (Math.abs(dx) > 1.5) b.dir = dx > 0 ? 1 : -1;
+              b.step += (dt * b.speed) / (b.k.stride * scaleOf(b)) * TAU;
+              walking = 1;
+            }
+          } else if (b.state === "peck") {
+            pecking = 1; b.pt += dt;
+            if (b.t >= b.dur) decide(b, false);
+          } else if (b.t >= b.dur) decide(b, false);
+
+          // ease in / out of walking and pecking so poses never snap
+          const e = 1 - Math.exp(-dt * 10);
+          b.walk += (walking - b.walk) * e;
+          b.peck += (pecking - b.peck) * e;
+          const burst = (b.pt * 0.6) % 1 < 0.72 ? 1 : 0; // a few pecks, then a look up
+          b.gate += (burst - b.gate) * (1 - Math.exp(-dt * 14));
+          draw(b);
+        };
+
+        const draw = (b) => {
+          const k = b.k, s = Math.sin(b.step), w = b.walk;
+          const wave = Math.pow(Math.max(0, Math.sin(Math.PI * ((b.pt * k.peckHz) % 1))), 1.4);
+          const p = b.peck * b.gate * wave;
+          b.legA.setAttribute("transform", rot(k.swing * w * s, k.legA));
+          b.legB.setAttribute("transform", rot(-k.swing * w * s, k.legB));
+          b.body.setAttribute("transform", `translate(0 ${(-Math.abs(s) * k.bob * w).toFixed(2)}) ${rot(k.tilt * p, k.body)}`);
+          if (b.neck) b.neck.setAttribute("transform", rot(k.nod * p + 6 * w * Math.sin(b.step - 0.9), k.neck));
+          const sc = scaleOf(b);
+          b.el.setAttribute("transform", `translate(${b.x.toFixed(2)} ${b.y.toFixed(2)}) scale(${(b.dir * sc).toFixed(3)} ${sc.toFixed(3)})`);
+        };
+
+        // keep the one lower on screen in front of the one behind it
+        const zsort = () => {
+          const order = flock.slice().sort((a, b) => a.y - b.y);
+          if (order.some((b, i) => root.children[i] !== b.el)) order.forEach((b) => root.appendChild(b.el));
+        };
+
+        let running = false, last = 0, since = 0;
+        const frame = (now) => {
+          if (!running) return;
+          const dt = Math.min(0.05, (now - last) / 1000 || 0.016);
+          last = now;
+          flock.forEach((b) => update(b, dt));
+          since += dt;
+          if (since > 0.25) { since = 0; zsort(); }
+          requestAnimationFrame(frame);
+        };
+        const start = () => { if (!running) { running = true; last = performance.now(); requestAnimationFrame(frame); } };
+        const stop = () => { running = false; };
+
+        if ("IntersectionObserver" in window) {
+          new IntersectionObserver((entries) => (entries[0].isIntersecting ? start() : stop())).observe(visual);
+        } else {
+          start();
+        }
       })();
     </script>
   </body>

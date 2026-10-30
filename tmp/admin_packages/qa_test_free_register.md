@@ -143,6 +143,7 @@ looking (or keep it; Test 3 will open a fresh one).
       be changed
 - [ ] Helper text says free registration is forced on while packages are
       disabled
+- [ ] Go to `http://localhost/altaslife/?page=admin_settings#tabPane-compensations` and verify: all compensation toggles are **disabled/greyed out**, the warning **"Packages are disabled. Commissions are tied to packages, so all compensation toggles are disabled while packages are inactive."** is shown, and all compensation settings are forced to **off**.
 
 5. Still in Window A, open `http://localhost/altaslife/?page=admin_packages`
 
@@ -447,7 +448,8 @@ account instead means the server forced the free/pending flow.
 
 - [ ] Green flash: **"Settings saved."**
 - [ ] The **Free Registration** dropdown is editable again
-- [ ] Leave it set to **On**
+- [ ] Go to `http://localhost/altaslife/?page=admin_settings#tabPane-compensations` and confirm the compensation toggles are now **editable again** (unlocked) after packages are re-enabled. (While packages were disabled they were forced off/disabled.)
+- [ ] Leave Free Registration set to **On**
 
 4. Go to `http://localhost/altaslife/?page=admin_packages`.
 
@@ -491,6 +493,7 @@ Copy this table into your report and fill it in.
 | 1 | Packages available → registration shows 3 steps | ☐ | |
 | 2a | "Disable Packages" saves; Free Registration forced ON and locked | ☐ | |
 | 2b | Packages page shows disabled warning; all rows Inactive; Edit/New disabled | ☐ | |
+| 2c | Compensations tab locked with notice; all compensation toggles disabled/off | ☐ | |
 | 3a | Guest `?page=register` shows 2 steps, no Select Package, banner present | ☐ | |
 | 3b | No Free/Code/E-Wallet buttons; no Back button on Account Setup | ☐ | |
 | 3c | Review shows **Account Type: Standard**; no Payment/Code/Package rows | ☐ | |

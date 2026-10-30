@@ -440,6 +440,23 @@ function setting_forget(?string $key = null): void
     unset($cache[$key]);
 }
 
+/**
+ * Should the registration UI offer binary placement controls?
+ *
+ * Placement is only meaningful when at least one package is live and the
+ * Binary Pairing compensation is switched on (master + per-type toggle).
+ * Packages disabled or Binary Pairing off ⇒ no upline/position fields.
+ *
+ * @param array $packages Active packages (Package::all(true)).
+ */
+function binary_placement_ui_enabled(array $packages): bool
+{
+    return !empty($packages)
+        && setting('packages_disabled', '0') !== '1'
+        && setting('commissions_enabled', '1') === '1'
+        && setting('commission_binary_enabled', '1') === '1';
+}
+
 // ── Pagination ────────────────────────────────────────────────────────────────
 
 function paginate(string $query, array $params, int $page, int $perPage = 20): array

@@ -292,7 +292,17 @@ class MemberController
         $user     = Auth::user();
         $view     = $_GET['view'] ?? 'binary'; // 'binary' | 'referral'
         $packages = Package::all(true);
-        $binaryPackages = array_values(array_filter($packages, fn($p) => (int)($p['pairing_enabled'] ?? 1) === 1));
+        // Mirror the register page's default-method logic in the modal: an
+        // e-wallet is the default paid method only when it can cover the
+        // cheapest active package.
+        $canUseEwallet = false;
+        if (!empty($packages)) {
+            $minFee = min(array_map(fn($p) => (float)$p['entry_fee'], $packages));
+            $canUseEwallet = Ewallet::balance(Auth::actingAdminId()) >= $minFee;
+        }
+        // Same gate as ?page=register: no placement when packages are disabled
+        // or the Binary Pairing compensation is off (master or per-type).
+        $binaryUiEnabled = binary_placement_ui_enabled($packages);
         $allPlans       = User::isPrimaryAdmin((int)$user['id']) || Auth::isSuperadmin();
         $pairingEnabled = $allPlans || Package::hasPairing((int)$user['package_id']);
         $showIndirect   = $allPlans || Package::hasIndirectReferral((int)$user['package_id']);
