@@ -1892,7 +1892,7 @@ $schemaLogo = $base . '/frontend/og-image.svg';
         }
 
         50% {
-          transform: translateX(20px);
+          transform: translateX(6px);
         }
       }
 
@@ -1955,11 +1955,11 @@ $schemaLogo = $base . '/frontend/og-image.svg';
       }
 
       .cloud-a {
-        animation: 18s ease-in-out infinite drift;
+        animation: 72s ease-in-out infinite drift;
       }
 
       .cloud-b {
-        animation: 24s ease-in-out infinite reverse drift;
+        animation: 88s ease-in-out infinite reverse drift;
       }
 
       .birds {
@@ -4444,6 +4444,26 @@ $schemaLogo = $base . '/frontend/og-image.svg';
                   </defs>
                   <rect width="600" height="660" fill="url(#skyG)" />
 
+                  <!-- SVG paints in document order: the sun sits at the back, clouds over it, birds over the clouds. -->
+                  <g class="layer" data-depth=".14">
+                    <g
+                      class="sun-rays"
+                      stroke="#c9a35c"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      opacity=".6"
+                    >
+                      <path d="M462 112V98" />
+                      <path d="M502 128l10-10" />
+                      <path d="M422 128l-10-10" />
+                      <path d="M518 168h14" />
+                      <path d="M406 168h-14" />
+                      <path d="M502 208l10 10" />
+                      <path d="M422 208l-10 10" />
+                    </g>
+                    <circle cx="462" cy="168" r="44" fill="#e9d3a0" />
+                  </g>
+
                   <g class="layer" data-depth=".06">
                     <g class="cloud-a" fill="#fffef7" opacity=".8">
                       <ellipse cx="150" cy="120" rx="46" ry="15" />
@@ -4468,25 +4488,6 @@ $schemaLogo = $base . '/frontend/og-image.svg';
                       <path d="M120 182q7-8 14 0q7-8 14 0" />
                       <path d="M178 158q6-7 12 0q6-7 12 0" />
                     </g>
-                  </g>
-
-                  <g class="layer" data-depth=".14">
-                    <g
-                      class="sun-rays"
-                      stroke="#c9a35c"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      opacity=".6"
-                    >
-                      <path d="M462 112V98" />
-                      <path d="M502 128l10-10" />
-                      <path d="M422 128l-10-10" />
-                      <path d="M518 168h14" />
-                      <path d="M406 168h-14" />
-                      <path d="M502 208l10 10" />
-                      <path d="M422 208l-10 10" />
-                    </g>
-                    <circle cx="462" cy="168" r="44" fill="#e9d3a0" />
                   </g>
 
                   <g class="layer" data-depth=".18">
